@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  rust:
+    build:
+      dockerfile: Dockerfile
+    container_name: rust
+    volumes:
+      - rust_work_area:/home/workuser
+    network_mode: host
+    stdin_open: true
+    tty: true
+
+volumes:
+  rust_work_area:
+    external: true

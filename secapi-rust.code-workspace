@@ -1,0 +1,36 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "rust-analyzer.check.command": "clippy",
+        "editor.formatOnSave": true,
+        "editor.formatOnSaveMode": "file"
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "type": "lldb",
+                "request": "launch",
+                "name": "Debug selected unit test",
+                "cargo": {
+                    "args": [
+                        "test",
+                        "--no-run",
+                    ],
+                },
+                "args": [
+                    "${selectedText}"
+                ],
+                "env": {
+                    "ROOT_KEYSTORE": "${workspaceFolder}/root_keystore.p12"
+                },
+                "cwd": "${workspaceFolder}",
+            }
+        ],
+        "compounds": []
+    }
+}

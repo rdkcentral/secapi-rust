@@ -1,0 +1,3 @@
+[submodule "secapi-sys/tasecureapi"]
+	path = secapi-sys/tasecureapi
+	url = https://github.com/rdkcentral/tasecureapi.git

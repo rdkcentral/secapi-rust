@@ -1,0 +1,25 @@
+[package]
+name = "secapi-sys"
+version = "0.1.0"
+authors = [
+    "Stefan Bossbaly <Stefan_Bossbaly@comcast.com>",
+]
+description = "FFI bindings to SecAPI"
+keywords = ["secure", "storage", "secapi"]
+categories = ["cryptography", "external-ffi-bindings"]
+repository = "https://github.com/rdkcentral/secapi-rust"
+readme = "README.md"
+edition = "2021"
+build = "build.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+system-sa-client = []
+
+[dependencies]
+libc = "0.2.147"
+
+[build-dependencies]
+copy_dir = "0.1.3"
