@@ -1,20 +1,20 @@
 /**
-* Copyright 2023 Comcast Cable Communications Management, LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright 2023 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 use std::error::Error;
 
 use libc::{c_char, c_void, size_t};
@@ -164,7 +164,8 @@ pub enum SaKdfAlgorithm {
     ///
     /// See RFC 5869 for definition.
     HKDF,
-    /// Concat Key Derivation Function Algorithm--a.k.a. the single step key derivation function (SSKDF).
+    /// Concat Key Derivation Function Algorithm--a.k.a. the single step key derivation function
+    /// (SSKDF).
     ///
     /// See NIST SP 56A for definition.
     CONCAT,
@@ -172,7 +173,8 @@ pub enum SaKdfAlgorithm {
     ///
     /// See ANSI X9.63 for definition.
     ANSI_X963,
-    /// CMAC Key Derivation Function Algorithm--a.k.a. the key based key derivation function (KBKDF).
+    /// CMAC Key Derivation Function Algorithm--a.k.a. the key based key derivation function
+    /// (KBKDF).
     ///
     /// See NIST SP 800-108 for definition.
     CMAC,
@@ -180,7 +182,8 @@ pub enum SaKdfAlgorithm {
     ///
     /// See https://github.com/Netflix/msl/wiki/Pre-shared-Keys-or-Model-Group-Keys-Entity-Authentication for definition.
     NETFLIX,
-    /// Common Root Key Ladder Key Derivation Function Algorithm--derives a key from the common SoC root key.
+    /// Common Root Key Ladder Key Derivation Function Algorithm--derives a key from the common SoC
+    /// root key.
     COMMON_ROOT_KEY_LADDER,
 }
 
@@ -315,11 +318,13 @@ pub enum SaStatus {
     NULL_PARAMETER,
     /// Operation failed due to invalid parameter value for specified algorithm.
     INVALID_PARAMETER,
-    /// Operation failed due to key rights enforcement. One or more preconditions required by the key rights were not met.
+    /// Operation failed due to key rights enforcement. One or more preconditions required by the
+    /// key rights were not met.
     OPERATION_NOT_ALLOWED,
     /// Operation failed due to SVP buffer not being fully contained within secure SVP region.
     INVALID_SVP_BUFFER,
-    /// Operation failed due to the combination of parameters not being supported in the implementation.
+    /// Operation failed due to the combination of parameters not being supported in the
+    /// implementation.
     OPERATION_NOT_SUPPORTED,
     /// Operation failed due to self-test failure.
     SELF_TEST,
@@ -348,32 +353,38 @@ pub enum SaUsageFlags {
     DECRYPT = 4,
     /// Key can be used as a signing key in signing or mac operations.
     SIGN = 5,
-    /// Key can be used for AES cipher operations when an analog video output is in an unprotected state.
+    /// Key can be used for AES cipher operations when an analog video output is in an unprotected
+    /// state.
     ///
     /// Any child key (resulting from key derivation, key exchange or unwrap operation) shall not
     /// have this flag set if the parent key did not have it set.
     ALLOWED_ANALOG_UNPROTECTED = 6,
-    /// Key can be used for AES cipher operations when an analog video output is protected using CGMSA.
+    /// Key can be used for AES cipher operations when an analog video output is protected using
+    /// CGMSA.
     ///
     /// Any child key (resulting from key derivation, key exchange or unwrap operation) shall not
     /// have this flag set if the parent key did not have it set.
     ALLOWED_ANALOG_CGMSA = 7,
-    /// Key can be used for AES cipher operations when a digital video output is in an unprotected state.
+    /// Key can be used for AES cipher operations when a digital video output is in an unprotected
+    /// state.
     ///
     /// Any child key (resulting from key derivation, key exchange or unwrap operation) shall not
     /// have this flag set if the parent key did not have it set.
     ALLOWED_DIGITAL_UNPROTECTED = 8,
-    /// Key can be used for AES cipher operations when a digital video output is protected using HDCP 1.4.
+    /// Key can be used for AES cipher operations when a digital video output is protected using
+    /// HDCP 1.4.
     ///
     /// Any child key (resulting from key derivation, key exchange or unwrap operation) shall not
     /// have this flag set if the parent key did not have it set.
     ALLOWED_DIGITAL_HDCP14 = 9,
-    /// Key can be used for AES cipher operations when a digital video output is protected using HDCP 2.2.
+    /// Key can be used for AES cipher operations when a digital video output is protected using
+    /// HDCP 2.2.
     ///
     /// Any child key (resulting from key derivation, key exchange or unwrap operation) shall not
     /// have this flag set if the parent key did not have it set.
     ALLOWED_DIGITAL_HDCP22 = 10,
-    /// Key can be used for AES cipher operations when a digital video output is protected using DTCP.
+    /// Key can be used for AES cipher operations when a digital video output is protected using
+    /// DTCP.
     ///
     /// Any child key (resulting from key derivation, key exchange or unwrap operation) shall not
     /// have this flag set if the parent key did not have it set.
@@ -404,23 +415,25 @@ pub const MAX_NUM_ALLOWED_TA_IDS: usize = 32;
 #[repr(C)]
 pub struct SaRights {
     /// Key identifier. Not used internally by SecAPI.
-    pub id: [c_char; 64],
+    /// TODO(#2): We treat this as a u8 but in the SecAPI3 code this is a char. Should be changed
+    /// upstream to uint8_t to get correct representation.
+    pub id: [u8; 64],
     /// Usage flags bitfield. Flags are set and tested using the SA_USAGE_BIT* macros.
     pub usage_flags: u64,
-    /// Usage flags bitfield for unwrapped child keys. When usage_flags only has SA_USAGE_FLAG_UNWRAP (bit 2) set of
-    /// bits 0-5, then these child_usage_flags apply to any key unwrapped by this key. Flags are set and tested using the
-    /// SA_USAGE_BIT* macros.
+    /// Usage flags bitfield for unwrapped child keys. When usage_flags only has
+    /// SA_USAGE_FLAG_UNWRAP (bit 2) set of bits 0-5, then these child_usage_flags apply to any
+    /// key unwrapped by this key. Flags are set and tested using the SA_USAGE_BIT* macros.
     pub child_usage_flags: u64,
     /// Start of the key validity period in seconds since Unix epoch.
     pub not_before: u64,
     /// End of the key validity period in seconds since Unix epoch.
     pub not_on_or_after: u64,
-    /// List of TAs that are allowed to wield this key. All entries in the array are compared to the
-    /// calling TA's UUID. If any of them match key is allowed to be used by the TA.
+    /// List of TAs that are allowed to wield this key. All entries in the array are compared to
+    /// the calling TA's UUID. If any of them match key is allowed to be used by the TA.
     ///
     /// There are two special case values:
-    /// +  0x00000000000000000000000000000000 matches no TAs.
-    /// +  0xffffffffffffffffffffffffffffffff matches all TAs.
+    /// + 0x00000000000000000000000000000000 matches no TAs.
+    /// + 0xffffffffffffffffffffffffffffffff matches all TAs.
     pub allowed_tas: [SaUuid; MAX_NUM_ALLOWED_TA_IDS],
 }
 
@@ -541,21 +554,24 @@ pub struct SaImportParamtersTypeJ {
     pub khmac: SaKey,
 }
 
-/// Import parameters for a SoC key container. This structure is used to signal the SecApi compatability version of the
-/// key container and to identify the object_id in the key rights. This structure can be extended in a SoC specific way
-/// with additional fields at the end, however the length field must include the sizeof the extended structure.
+/// Import parameters for a SoC key container. This structure is used to signal the SecApi
+/// compatability version of the key container and to identify the object_id in the key rights. This
+/// structure can be extended in a SoC specific way with additional fields at the end, however the
+/// length field must include the sizeof the extended structure.
 #[derive(Debug)]
 #[repr(C)]
 pub struct SaImportParametersSoc {
     /// The size of this structure. The most significant size byte is in length[0] and the least
     /// significant size byte is in length[1].
     pub length: [u8; 2],
-    /// The SecApi version that the key container is compatible with. Must be either version 2 or version 3.
+    /// The SecApi version that the key container is compatible with. Must be either version 2 or
+    /// version 3.
     pub version: u8,
-    /// The default key rights to use only if the key container does not contain included key rights.
+    /// The default key rights to use only if the key container does not contain included key
+    /// rights.
     pub default_rights: SaRights,
-    /// The object ID of the key. The first 8 bytes of the sa_rights.id field will be set to this value in big endian
-    /// form.
+    /// The object ID of the key. The first 8 bytes of the sa_rights.id field will be set to this
+    /// value in big endian form.
     pub object_id: u64,
 }
 

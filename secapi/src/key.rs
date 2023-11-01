@@ -1,20 +1,20 @@
 /**
-* Copyright 2023 Comcast Cable Communications Management, LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright 2023 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 use std::{ffi::c_void, ptr::null_mut};
 
 use libc::size_t;
@@ -849,7 +849,8 @@ pub enum KeyDeriveParameters<'a> {
         /// Info value
         info: Vec<u8>,
     },
-    /// Concat Key Derivation Function Algorithm--a.k.a. the single step key derivation function (SSKDF)
+    /// Concat Key Derivation Function Algorithm--a.k.a. the single step key derivation function
+    /// (SSKDF)
     ///
     /// See NIST SP 56A for definition
     Concat {
@@ -875,7 +876,8 @@ pub enum KeyDeriveParameters<'a> {
         /// Info value
         info: Vec<u8>,
     },
-    /// CMAC Key Derivation Function Algorithm--a.k.a. the key based key derivation function (KBKDF)
+    /// CMAC Key Derivation Function Algorithm--a.k.a. the key based key derivation function
+    /// (KBKDF)
     ///
     /// See NIST SP 800-108 for definition
     Cmac {
@@ -898,7 +900,8 @@ pub enum KeyDeriveParameters<'a> {
         /// HMAC key handle
         hmac: &'a Key,
     },
-    /// Common Root Key Ladder Key Derivation Function Algorithm--derives a key from the common SoC root key
+    /// Common Root Key Ladder Key Derivation Function Algorithm--derives a key from the common SoC
+    /// root key
     CommonRootKeyLadder {
         /// Input for first stage of the key ladder
         c1: [u8; 16],
@@ -1347,7 +1350,7 @@ impl Drop for KeySignFfiParameters {
 #[derive(Debug, Clone)]
 pub struct KeyHeader {
     ///  Fixed "sak0" value used for identifying the exported key container.
-    pub magic: [u8; 4],
+    pub magic: [char; 4],
     /// Key rights
     pub rights: Rights,
     /// Key type
@@ -1362,14 +1365,29 @@ pub struct KeyHeader {
     pub size: u16,
 }
 
-impl From<ffi::SaHeader> for KeyHeader {
-    fn from(value: ffi::SaHeader) -> Self {
-        Self {
-            magic: value.magic,
+impl TryFrom<ffi::SaHeader> for KeyHeader {
+    type Error = ErrorStatus;
+
+    fn try_from(value: ffi::SaHeader) -> Result<Self, Self::Error> {
+        let magic = {
+            let mut magic_array = ['\0'; 4];
+
+            for (offset, character) in value.magic.into_iter().enumerate() {
+                match std::char::from_u32(character as u32) {
+                    Some(c) => magic_array[offset] = c,
+                    None => return Err(ErrorStatus::InvalidParameter),
+                }
+            }
+
+            Ok(magic_array)
+        }?;
+
+        Ok(Self {
+            magic,
             rights: value.rights.into(),
             key_type: ffi::SaKeyType::try_from(value.type_).unwrap().into(),
             size: value.size,
-        }
+        })
     }
 }
 
@@ -1550,7 +1568,7 @@ impl Key {
         // will be overridden by the ffi::sa_key_header call but the memory needs to exist
         // and be initialized in order for Rust to be happy.
         let mut header = ffi::SaHeader {
-            magic: [0u8; 4],
+            magic: [0; 4],
             rights: Rights::allow_all().into(),
             type_: 0,
             type_parameters: ffi::SaTypeParameters {
@@ -1561,7 +1579,7 @@ impl Key {
 
         convert_result(unsafe { ffi::sa_key_header(&mut header as *mut _, self.key_handle) })?;
 
-        Ok(header.into())
+        header.try_into()
     }
 
     pub fn digest(&self, digest_algorithm: DigestAlgorithm) -> Result<Vec<u8>, ErrorStatus> {
@@ -1995,7 +2013,7 @@ mod test {
 
         let header = key.header()?;
 
-        assert_eq!(header.magic, [b's', b'a', b'k', b'0']);
+        assert_eq!(header.magic, ['s', 'a', 'k', '0']);
         assert_eq!(header.rights, Rights::allow_all());
         assert_eq!(header.key_type, KeyType::Rsa);
         assert_eq!(header.size, 128);
@@ -2105,7 +2123,7 @@ mod test {
 
         let header = key.header()?;
 
-        assert_eq!(header.magic, [b's', b'a', b'k', b'0']);
+        assert_eq!(header.magic, ['s', 'a', 'k', '0']);
         assert_eq!(header.rights, Rights::allow_all());
         assert_eq!(header.key_type, KeyType::Rsa);
         assert_eq!(header.size, 128);

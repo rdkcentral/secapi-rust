@@ -1,20 +1,20 @@
 /**
-* Copyright 2023 Comcast Cable Communications Management, LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright 2023 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 use libc::{c_void, size_t};
 use secapi_sys as ffi;
 
@@ -99,7 +99,7 @@ impl<'a> SvpBuffer<'a> {
         })
     }
 
-    pub fn with_underlying_memory(memory: &'a mut SvpMemory) -> Result<Self, ErrorStatus> {
+    pub fn with_underlying_memory(memory: &'a SvpMemory) -> Result<Self, ErrorStatus> {
         let mut buffer_handle: ffi::SaSvpBuffer = ffi::INVALID_HANDLE;
 
         convert_result(unsafe {
@@ -199,9 +199,10 @@ impl<'a> Drop for SvpBuffer<'a> {
         match underlying_svp_memory.take() {
             Some(svp_memory) => {
                 // TODO(Stefan_Bossbaly@comcast.com): Ugly workaround
-                // Since sa_svp_buffer_release() takes mutable points and we only have a mutable reference
-                // we need to copy the local variables so that we can obtain a mutable reference to them.
-                // SecAPI should be update to accept const pointers so that we do not need to do this workaround.
+                // Since sa_svp_buffer_release() takes mutable points and we only have a mutable
+                // reference we need to copy the local variables so that we can
+                // obtain a mutable reference to them. SecAPI should be update to
+                // accept const pointers so that we do not need to do this workaround.
                 let mut svp_memory_ptr = svp_memory.memory_ptr;
                 let svp_memory_ptr_ptr = &mut svp_memory_ptr as *mut *mut c_void;
                 let mut size = svp_memory.size;
