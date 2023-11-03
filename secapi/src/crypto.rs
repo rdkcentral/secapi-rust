@@ -66,33 +66,25 @@ impl MacInitParameters {
     fn into_ffi_parameters(self) -> MacInitFfiParameters {
         match self {
             Self::CMac => MacInitFfiParameters::CMac,
-            Self::HMac { digest_algorithm } => {
-                MacInitFfiParameters::HMac(ffi::SaMacParametersHmac {
+            Self::HMac { digest_algorithm } => MacInitFfiParameters::HMac {
+                params: ffi::SaMacParametersHmac {
                     digest_algorithm: digest_algorithm.into(),
-                })
-            }
+                },
+            },
         }
     }
 }
 
 enum MacInitFfiParameters {
     CMac,
-    HMac(ffi::SaMacParametersHmac),
+    HMac { params: ffi::SaMacParametersHmac },
 }
 
 impl FfiParameters for MacInitFfiParameters {
     fn ffi_ptr(&mut self) -> *mut c_void {
         match self {
             Self::CMac => null_mut(),
-            Self::HMac(params) => params as *mut _ as *mut c_void,
-        }
-    }
-}
-
-impl Drop for MacInitFfiParameters {
-    fn drop(&mut self) {
-        match self {
-            Self::CMac | Self::HMac(_) => {}
+            Self::HMac { params, .. } => params as *mut _ as *mut c_void,
         }
     }
 }

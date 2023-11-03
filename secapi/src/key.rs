@@ -119,42 +119,77 @@ impl From<ffi::SaKdfAlgorithm> for KdfAlgorithm {
     }
 }
 
+/// Provides the FFI import parameters for the sa_key_import() call
 #[derive(Debug)]
 enum KeyImportFfiParameters {
-    Symmetric(ffi::SaImportParametersSymmetric),
-    EcPrivateBytes(ffi::SaImportParametersEcPrivateBytes),
-    RsaPrivateKeyInfo(ffi::SaImportParametersRsaPrivateKeyInfo),
+    /// FFI Parameters for SA_KEY_FORMAT_SYMMETRIC_BYTES
+    Symmetric {
+        /// The FFI parameters that will be passed into the C API for the import
+        /// value SA_KEY_FORMAT_SYMMETRIC_BYTES
+        params: ffi::SaImportParametersSymmetric,
+
+        /// Key rights to associate with imported key
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyImportFfiParameters::Symmetric::params
+        #[allow(dead_code)]
+        rights: Box<ffi::SaRights>,
+    },
+    /// FFI Parameters for SA_KEY_FORMAT_EC_PRIVATE_BYTES
+    EcPrivateBytes {
+        /// The FFI parameters that will be passed into the C API for the import
+        /// value SA_KEY_FORMAT_EC_PRIVATE_BYTES
+        params: ffi::SaImportParametersEcPrivateBytes,
+
+        /// Key rights to associate with imported key
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyImportFfiParameters::EcPrivateBytes::params
+        #[allow(dead_code)]
+        rights: Box<ffi::SaRights>,
+    },
+    /// FFI Parameters for SA_KEY_FORMAT_RSA_PRIVATE_KEY_INFO
+    RsaPrivateKeyInfo {
+        /// The FFI parameters that will be passed into the C API for the import
+        /// value SA_KEY_FORMAT_RSA_PRIVATE_KEY_INFO
+        params: ffi::SaImportParametersRsaPrivateKeyInfo,
+
+        /// Key rights to associate with imported key
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyImportFfiParameters::RsaPrivateKeyInfo::params
+        #[allow(dead_code)]
+        rights: Box<ffi::SaRights>,
+    },
+    /// FFI Parameters for SA_KEY_FORMAT_EXPORTED
     Exported,
+    /// FFI Parameters for SA_KEY_FORMAT_SOC
     SoC,
-    TypeJ(ffi::SaImportParamtersTypeJ),
+    /// FFI Parameters for SA_KEY_FORMAT_TYPEJ
+    TypeJ {
+        /// The FFI parameters that will be passed into the C API for the import
+        /// value SA_KEY_FORMAT_TYPEJ
+        params: ffi::SaImportParamtersTypeJ,
+    },
 }
 
 impl FfiParameters for KeyImportFfiParameters {
-    /// Casts the ffi structure to a c_void pointer
     fn ffi_ptr(&mut self) -> *mut c_void {
         match self {
-            Self::Symmetric(params) => params as *mut _ as *mut c_void,
-            Self::EcPrivateBytes(params) => params as *mut _ as *mut c_void,
-            Self::RsaPrivateKeyInfo(params) => params as *mut _ as *mut c_void,
+            Self::Symmetric { params, .. } => params as *mut _ as *mut c_void,
+            Self::EcPrivateBytes { params, .. } => params as *mut _ as *mut c_void,
+            Self::RsaPrivateKeyInfo { params, .. } => params as *mut _ as *mut c_void,
             Self::Exported | Self::SoC => null_mut(),
-            Self::TypeJ(params) => params as *mut _ as *mut c_void,
-        }
-    }
-}
-
-impl Drop for KeyImportFfiParameters {
-    fn drop(&mut self) {
-        match self {
-            Self::Symmetric(params) => {
-                let _ = unsafe { Box::from_raw(params.rights as *mut ffi::SaRights) };
-            }
-            Self::EcPrivateBytes(params) => {
-                let _ = unsafe { Box::from_raw(params.rights as *mut ffi::SaRights) };
-            }
-            Self::RsaPrivateKeyInfo(params) => {
-                let _ = unsafe { Box::from_raw(params.rights as *mut ffi::SaRights) };
-            }
-            Self::Exported | Self::SoC | Self::TypeJ(_) => {}
+            Self::TypeJ { params, .. } => params as *mut _ as *mut c_void,
         }
     }
 }
@@ -183,7 +218,8 @@ pub enum KeyImportFormat {
     Exported,
     /// SoC Key Format - encoded according to the SoC Specific Key Specification
     SoC,
-    /// TypeJ Key Format - encoded according to the SecApi Key Container Specification
+    /// TypeJ Key Format - encoded according to the SecApi Key Container
+    /// Specification
     TypeJ {
         /// Cipher key
         kcipher: Key,
@@ -198,35 +234,42 @@ impl KeyImportFormat {
             Self::SymmetricBytes { rights } => {
                 let sa_rights: Box<ffi::SaRights> = Box::new(rights.into());
 
-                KeyImportFfiParameters::Symmetric(ffi::SaImportParametersSymmetric {
-                    rights: Box::into_raw(sa_rights),
-                })
+                KeyImportFfiParameters::Symmetric {
+                    params: ffi::SaImportParametersSymmetric {
+                        rights: &*sa_rights,
+                    },
+                    rights: sa_rights,
+                }
             }
             Self::EcPrivateBytes { rights, curve } => {
                 let sa_rights: Box<ffi::SaRights> = Box::new(rights.into());
 
-                KeyImportFfiParameters::EcPrivateBytes(ffi::SaImportParametersEcPrivateBytes {
-                    curve: curve.into(),
-                    rights: Box::into_raw(sa_rights),
-                })
+                KeyImportFfiParameters::EcPrivateBytes {
+                    params: ffi::SaImportParametersEcPrivateBytes {
+                        curve: curve.into(),
+                        rights: &*sa_rights,
+                    },
+                    rights: sa_rights,
+                }
             }
             Self::RsaPrivateKeyInfo { rights } => {
                 let sa_rights: Box<ffi::SaRights> = Box::new(rights.into());
 
-                KeyImportFfiParameters::RsaPrivateKeyInfo(
-                    ffi::SaImportParametersRsaPrivateKeyInfo {
-                        rights: Box::into_raw(sa_rights),
+                KeyImportFfiParameters::RsaPrivateKeyInfo {
+                    params: ffi::SaImportParametersRsaPrivateKeyInfo {
+                        rights: &*sa_rights,
                     },
-                )
+                    rights: sa_rights,
+                }
             }
             Self::Exported => KeyImportFfiParameters::Exported,
             Self::SoC => KeyImportFfiParameters::SoC,
-            Self::TypeJ { kcipher, khmac } => {
-                KeyImportFfiParameters::TypeJ(ffi::SaImportParamtersTypeJ {
+            Self::TypeJ { kcipher, khmac } => KeyImportFfiParameters::TypeJ {
+                params: ffi::SaImportParamtersTypeJ {
                     kcipher: kcipher.key_handle,
                     khmac: khmac.key_handle,
-                })
-            }
+                },
+            },
         }
     }
 }
@@ -244,6 +287,7 @@ impl From<&KeyImportFormat> for ffi::SaKeyFormat {
     }
 }
 
+/// List of supported unwrap parameters
 #[derive(Debug)]
 pub enum KeyUnwrapTypeParameters {
     /// Symmetric Key Type - AES & HMAC
@@ -263,11 +307,11 @@ impl KeyUnwrapTypeParameters {
     fn into_ffi_parameters(self) -> KeyUnwrapTypeFfiParameters {
         match self {
             Self::Symmetric => KeyUnwrapTypeFfiParameters::Symmetric,
-            Self::EllipticCurve { curve } => {
-                KeyUnwrapTypeFfiParameters::EllipticCurve(ffi::SaUnwrapTypeParametersEc {
+            Self::EllipticCurve { curve } => KeyUnwrapTypeFfiParameters::EllipticCurve {
+                params: ffi::SaUnwrapTypeParametersEc {
                     curve: curve.into(),
-                })
-            }
+                },
+            },
             Self::Rsa => KeyUnwrapTypeFfiParameters::Rsa,
             Self::DiffieHellman => KeyUnwrapTypeFfiParameters::DiffieHellman,
         }
@@ -288,7 +332,9 @@ impl From<&KeyUnwrapTypeParameters> for ffi::SaKeyType {
 #[derive(Debug)]
 enum KeyUnwrapTypeFfiParameters {
     Symmetric,
-    EllipticCurve(ffi::SaUnwrapTypeParametersEc),
+    EllipticCurve {
+        params: ffi::SaUnwrapTypeParametersEc,
+    },
     Rsa,
     DiffieHellman,
 }
@@ -297,17 +343,7 @@ impl FfiParameters for KeyUnwrapTypeFfiParameters {
     fn ffi_ptr(&mut self) -> *mut c_void {
         match self {
             Self::Symmetric | Self::Rsa | Self::DiffieHellman => null_mut(),
-            Self::EllipticCurve(params) => params as *mut _ as *mut c_void,
-        }
-    }
-}
-
-impl Drop for KeyUnwrapTypeFfiParameters {
-    fn drop(&mut self) {
-        match self {
-            Self::Symmetric | Self::Rsa | Self::DiffieHellman | Self::EllipticCurve(_) => {
-                // No special logic need for ffi cleanup
-            }
+            Self::EllipticCurve { params, .. } => params as *mut _ as *mut c_void,
         }
     }
 }
@@ -361,219 +397,127 @@ pub enum KeyUnwrapCipherAlgorithmParameters {
         /// MGF1 digest algorithm
         mgf1_digest_algorithm: DigestAlgorithm,
         /// Label
-        label: Option<Vec<u8>>,
+        maybe_label: Option<Vec<u8>>,
     },
 }
 
 impl KeyUnwrapCipherAlgorithmParameters {
     fn into_ffi_parameters(self) -> KeyUnwrapAlgorithmFfiParameters {
+        // These array(s) must live long enough for the sa_key_unwrap() call. To
+        // accomplish this we will make a copy of the array on the heap so that moving
+        // ownership does not change the address of the pointer and will retain the Box
+        // as a part of the KeyUnwrapAlgorithmFfiParameters struct.
         match self {
             Self::AesCbc { iv } => {
-                // These array(s) must live long enough for the sa_key_unwrap() call.
-                // To accomplish this we will make a copy of the array on the heap.
-                // Then we will get an pointer to the array and then call into_raw
-                // which will release the Box from the borrow checker and return a raw
-                // pointer. This means that we are now responsible for cleaning up memory
-                // which we will handle in the KeyUnwrapFfiParameters Drop trait.
                 let iv_len = iv.len();
                 let iv_box = Box::new(iv);
-                let iv_ptr = iv_box.as_ptr();
-                let iv_raw_ptr = Box::into_raw(iv_box);
 
-                KeyUnwrapAlgorithmFfiParameters::AesCbc(
-                    ffi::SaUnwrapParametersAesCbc {
-                        iv: iv_ptr as *const _,
+                KeyUnwrapAlgorithmFfiParameters::AesCbc {
+                    params: ffi::SaUnwrapParametersAesCbc {
+                        iv: iv_box.as_ptr() as *const c_void,
                         iv_length: iv_len as size_t,
                     },
-                    iv_raw_ptr,
-                )
+                    iv: iv_box,
+                }
             }
             Self::AesCbcPkcs7 { iv } => {
-                // These array(s) must live long enough for the sa_key_unwrap() call.
-                // To accomplish this we will make a copy of the array on the heap.
-                // Then we will get an pointer to the array and then call into_raw
-                // which will release the Box from the borrow checker and return a raw
-                // pointer. This means that we are now responsible for cleaning up memory
-                // which we will handle in the KeyUnwrapFfiParameters Drop trait.
                 let iv_len = iv.len();
                 let iv_box = Box::new(iv);
-                let iv_ptr = iv_box.as_ptr();
-                let iv_raw_ptr = Box::into_raw(iv_box);
 
-                KeyUnwrapAlgorithmFfiParameters::AesCbcPkcs7(
-                    ffi::SaUnwrapParametersAesCbc {
-                        iv: iv_ptr as *const _,
+                KeyUnwrapAlgorithmFfiParameters::AesCbcPkcs7 {
+                    params: ffi::SaUnwrapParametersAesCbc {
+                        iv: iv_box.as_ptr() as *const _,
                         iv_length: iv_len as size_t,
                     },
-                    iv_raw_ptr,
-                )
+                    iv: iv_box,
+                }
             }
             Self::AesCtr { ctr } => {
-                // These array(s) must live long enough for the sa_key_unwrap() call.
-                // To accomplish this we will make a copy of the array on the heap.
-                // Then we will get an pointer to the array and then call into_raw
-                // which will release the Box from the borrow checker and return a raw
-                // pointer. This means that we are now responsible for cleaning up memory
-                // which we will handle in the KeyUnwrapFfiParameters Drop trait.
                 let ctr_len = ctr.len();
                 let ctr_box = Box::new(ctr);
-                let ctr_ptr = ctr_box.as_ptr();
-                let ctr_raw_ptr = Box::into_raw(ctr_box);
 
-                KeyUnwrapAlgorithmFfiParameters::AesCtr(
-                    ffi::SaUnwrapParametersAesCtr {
-                        ctr: ctr_ptr as *const _,
+                KeyUnwrapAlgorithmFfiParameters::AesCtr {
+                    params: ffi::SaUnwrapParametersAesCtr {
+                        ctr: ctr_box.as_ptr() as *const _,
                         ctr_length: ctr_len as size_t,
                     },
-                    ctr_raw_ptr,
-                )
+                    ctr: ctr_box,
+                }
             }
             Self::AesGcm { iv, aad, tag } => {
-                // These array(s) must live long enough for the sa_key_unwrap() call.
-                // To accomplish this we will make a copy of the array on the heap.
-                // Then we will get an pointer to the array and then call into_raw
-                // which will release the Box from the borrow checker and return a raw
-                // pointer. This means that we are now responsible for cleaning up memory
-                // which we will handle in the KeyUnwrapFfiParameters Drop trait.
                 let iv_len = iv.len();
                 let iv_box = Box::new(iv);
-                let iv_ptr = iv_box.as_ptr();
-                let iv_raw_ptr = Box::into_raw(iv_box);
 
-                // Break the aad vector into its primitive parts
-                let aad_ptr = aad.as_ptr();
-                let aad_len = aad.len();
-                let aad_capacity = aad.capacity();
-
-                // Break the tag vector into its primitive parts
-                let tag_ptr = tag.as_ptr();
-                let tag_len = tag.len();
-                let tag_capacity = tag.capacity();
-
-                // Drop the ownership. We are now responsible for cleaning up memory which
-                // we will handle in the KeyUnwrapFfiParameters Drop trait.
-                std::mem::forget(aad);
-                std::mem::forget(tag);
-
-                KeyUnwrapAlgorithmFfiParameters::AesGcm(
-                    ffi::SaUnwrapParametersAesGcm {
-                        iv: iv_ptr as *const _,
+                KeyUnwrapAlgorithmFfiParameters::AesGcm {
+                    params: ffi::SaUnwrapParametersAesGcm {
+                        iv: iv_box.as_ptr() as *const c_void,
                         iv_length: iv_len as size_t,
-                        aad: aad_ptr as *const _,
-                        aad_length: aad_len as size_t,
-                        tag: tag_ptr as *const _,
-                        tag_length: tag_len as size_t,
+                        aad: aad.as_ptr() as *const c_void,
+                        aad_length: aad.len() as size_t,
+                        tag: tag.as_ptr() as *const c_void,
+                        tag_length: tag.len() as size_t,
                     },
-                    iv_raw_ptr,
-                    (aad_ptr, aad_len, aad_capacity),
-                    (tag_ptr, tag_len, tag_capacity),
-                )
+                    iv: iv_box,
+                    aad,
+                    tag,
+                }
             }
             Self::ChaCha20 { counter, nonce } => {
-                // These array(s) must live long enough for the sa_key_unwrap() call.
-                // To accomplish this we will make a copy of the array on the heap.
-                // Then we will get an pointer to the array and then call into_raw
-                // which will release the Box from the borrow checker and return a raw
-                // pointer. This means that we are now responsible for cleaning up memory
-                // which we will handle in the KeyUnwrapFfiParameters Drop trait.
                 let counter_bytes = counter.to_le_bytes();
                 let counter_len = counter_bytes.len();
                 let counter_box = Box::new(counter_bytes);
-                let counter_ptr = counter_box.as_ptr();
-                let counter_raw_ptr = Box::into_raw(counter_box);
 
-                let nonce_len = nonce.len();
+                let nonce_len: usize = nonce.len();
                 let nonce_box = Box::new(nonce);
-                let nonce_ptr = nonce_box.as_ptr();
-                let nonce_raw_ptr = Box::into_raw(nonce_box);
 
-                KeyUnwrapAlgorithmFfiParameters::ChaCha20(
-                    ffi::SaUnwrapParametersChaCha20 {
-                        counter: counter_ptr as *const _,
+                KeyUnwrapAlgorithmFfiParameters::ChaCha20 {
+                    params: ffi::SaUnwrapParametersChaCha20 {
+                        counter: counter_box.as_ptr() as *const c_void,
                         counter_length: counter_len as size_t,
-                        nonce: nonce_ptr as *const _,
+                        nonce: nonce_box.as_ptr() as *const c_void,
                         nonce_length: nonce_len as size_t,
                     },
-                    counter_raw_ptr,
-                    nonce_raw_ptr,
-                )
+                    counter: counter_box,
+                    nonce: nonce_box,
+                }
             }
             Self::ChaCha20Poly1305 { nonce, aad, tag } => {
-                // These array(s) must live long enough for the sa_key_unwrap() call.
-                // To accomplish this we will make a copy of the array on the heap.
-                // Then we will get an pointer to the array and then call into_raw
-                // which will release the Box from the borrow checker and return a raw
-                // pointer. This means that we are now responsible for cleaning up memory
-                // which we will handle in the KeyUnwrapFfiParameters Drop trait.
                 let nonce_len = nonce.len();
                 let nonce_box = Box::new(nonce);
-                let nonce_ptr = nonce_box.as_ptr();
-                let nonce_raw_ptr = Box::into_raw(nonce_box);
 
-                // Break the aad vector into its primitive parts
-                let aad_ptr = aad.as_ptr();
-                let aad_len = aad.len();
-                let aad_capacity = aad.capacity();
-
-                // Break the tag vector into its primitive parts
-                let tag_ptr = tag.as_ptr();
-                let tag_len = tag.len();
-                let tag_capacity = tag.capacity();
-
-                // Drop the ownership. We are now responsible for cleaning up memory which
-                // we will handle in the KeyUnwrapFfiParameters Drop trait.
-                std::mem::forget(aad);
-                std::mem::forget(tag);
-
-                KeyUnwrapAlgorithmFfiParameters::ChaCha20Poly1305(
-                    ffi::SaUnwrapParametersChaCha20Poly1305 {
-                        nonce: nonce_ptr as *const _,
+                KeyUnwrapAlgorithmFfiParameters::ChaCha20Poly1305 {
+                    params: ffi::SaUnwrapParametersChaCha20Poly1305 {
+                        nonce: nonce_box.as_ptr() as *const c_void,
                         nonce_length: nonce_len as size_t,
-                        aad: aad_ptr as *const _,
-                        aad_length: aad_len as size_t,
-                        tag: tag_ptr as *const _,
-                        tag_length: tag_len as size_t,
+                        aad: aad.as_ptr() as *const c_void,
+                        aad_length: aad.len() as size_t,
+                        tag: tag.as_ptr() as *const c_void,
+                        tag_length: tag.len() as size_t,
                     },
-                    nonce_raw_ptr,
-                    (aad_ptr, aad_len, aad_capacity),
-                    (tag_ptr, tag_len, tag_capacity),
-                )
+                    nonce: nonce_box,
+                    aad,
+                    tag,
+                }
             }
             Self::RsaOaep {
                 digest_algorithm,
                 mgf1_digest_algorithm,
-                mut label,
+                mut maybe_label,
             } => {
-                let label_parts = match label.take() {
-                    Some(mut label) => {
-                        // Break the label vector into its primitive parts
-                        let label_ptr = label.as_mut_ptr();
-                        let label_len = label.len();
-                        let label_capacity = label.capacity();
-
-                        // Drop the ownership. We are now responsible for cleaning up memory which
-                        // we will handle in the KeyUnwrapFfiParameters Drop trait.
-                        std::mem::forget(label);
-
-                        Some((label_ptr, label_len, label_capacity))
-                    }
-                    None => None,
-                };
-
-                let (label_ptr, label_len) = match &label_parts {
-                    Some((label_ptr, label_len, _)) => (*label_ptr, *label_len),
+                let (label_ptr, label_len) = match &mut maybe_label {
+                    Some(label) => (label.as_mut_ptr() as *mut c_void, label.len()),
                     None => (null_mut(), 0),
                 };
 
-                KeyUnwrapAlgorithmFfiParameters::RsaOaep(
-                    ffi::SaUnwrapParametersRsaOaep {
+                KeyUnwrapAlgorithmFfiParameters::RsaOaep {
+                    params: ffi::SaUnwrapParametersRsaOaep {
                         digest_algorithm: digest_algorithm.into(),
                         mgf1_digest_algorithm: mgf1_digest_algorithm.into(),
                         label: label_ptr as *mut _,
                         label_length: label_len as size_t,
                     },
-                    label_parts,
-                )
+                    maybe_label,
+                }
             }
         }
     }
@@ -593,110 +537,183 @@ impl From<&KeyUnwrapCipherAlgorithmParameters> for ffi::SaCipherAlgorithm {
     }
 }
 
+/// Provides the FFI unwrap parameters for the sa_key_unwrap() call
 #[derive(Debug)]
 enum KeyUnwrapAlgorithmFfiParameters {
-    AesCbc(
-        ffi::SaUnwrapParametersAesCbc,
-        /// IV box array raw ptr
-        *mut [u8; 16],
-    ),
-    AesCbcPkcs7(
-        ffi::SaUnwrapParametersAesCbc,
-        /// IV box array raw ptr
-        *mut [u8; 16],
-    ),
-    AesCtr(
-        ffi::SaUnwrapParametersAesCtr,
-        /// ctr box array raw ptr
-        *mut [u8; 16],
-    ),
-    AesGcm(
-        ffi::SaUnwrapParametersAesGcm,
-        /// IV box array raw ptr
-        *mut [u8; 16],
-        /// AAD Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-        /// Tag Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-    ),
-    ChaCha20(
-        ffi::SaUnwrapParametersChaCha20,
-        /// Counter box array raw ptr
-        *mut [u8; 4],
-        /// Nonce box array raw ptr
-        *mut [u8; 12],
-    ),
-    ChaCha20Poly1305(
-        ffi::SaUnwrapParametersChaCha20Poly1305,
-        /// Nonce box array raw ptr
-        *mut [u8; 12],
-        /// AAD Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-        /// Tag Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-    ),
-    RsaOaep(
-        ffi::SaUnwrapParametersRsaOaep,
-        /// Label Vec's primitive parts (pointer, size, capacity) if provided by the user
-        Option<(*mut u8, usize, usize)>,
-    ),
+    /// FFI Parameters for SA_CIPHER_ALGORITHM_AES_CBC
+    AesCbc {
+        /// The FFI parameters that will be passed into the C API for the unwrap
+        /// value SA_CIPHER_ALGORITHM_AES_CBC
+        params: ffi::SaUnwrapParametersAesCbc,
+
+        /// Initialization vector
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::AesCbc::params
+        #[allow(dead_code)]
+        iv: Box<[u8; 16]>,
+    },
+    /// FFI Parameters for SA_CIPHER_ALGORITHM_AES_CBC_PKCS7
+    AesCbcPkcs7 {
+        /// The FFI parameters that will be passed into the C API for the unwrap
+        /// value SA_CIPHER_ALGORITHM_AES_CBC_PKCS7
+        params: ffi::SaUnwrapParametersAesCbc,
+
+        /// Initialization vector
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::AesCbcPkcs7::params
+        #[allow(dead_code)]
+        iv: Box<[u8; 16]>,
+    },
+    /// FFI Parameters for SA_CIPHER_ALGORITHM_AES_CTR
+    AesCtr {
+        /// The FFI parameters that will be passed into the C API for the unwrap
+        /// value SA_CIPHER_ALGORITHM_AES_CTR
+        params: ffi::SaUnwrapParametersAesCtr,
+
+        /// Concatenated nonce and counter value
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::AesCtr::params
+        #[allow(dead_code)]
+        ctr: Box<[u8; 16]>,
+    },
+    /// FFI Parameters for SA_CIPHER_ALGORITHM_AES_GCM
+    AesGcm {
+        /// The FFI parameters that will be passed into the C API for the unwrap
+        /// value SA_CIPHER_ALGORITHM_AES_GCM
+        params: ffi::SaUnwrapParametersAesGcm,
+
+        /// Initialization vector
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::AesGcm::params
+        #[allow(dead_code)]
+        iv: Box<[u8; 16]>,
+
+        /// Additional authenticated data
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::AesGcm::params
+        #[allow(dead_code)]
+        aad: Vec<u8>,
+
+        /// Authentication tag
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::AesGcm::params
+        #[allow(dead_code)]
+        tag: Vec<u8>,
+    },
+    /// FFI Parameters for SA_CIPHER_ALGORITHM_CHACHA20
+    ChaCha20 {
+        /// The FFI parameters that will be passed into the C API for the unwrap
+        /// value SA_CIPHER_ALGORITHM_CHACHA20
+        params: ffi::SaUnwrapParametersChaCha20,
+
+        /// Counter value in little-endian format
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::ChaCha20::params
+        #[allow(dead_code)]
+        counter: Box<[u8; 4]>,
+
+        /// Nonce value
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::ChaCha20::params
+        #[allow(dead_code)]
+        nonce: Box<[u8; 12]>,
+    },
+    /// FFI Parameters for SA_CIPHER_ALGORITHM_CHACHA20_POLY1305
+    ChaCha20Poly1305 {
+        /// The FFI parameters that will be passed into the C API for the unwrap
+        /// value SA_CIPHER_ALGORITHM_CHACHA20_POLY1305
+        params: ffi::SaUnwrapParametersChaCha20Poly1305,
+
+        /// Nonce value
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::ChaCha20Poly1305::params
+        #[allow(dead_code)]
+        nonce: Box<[u8; 12]>,
+
+        /// Additional authenticated data
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::ChaCha20Poly1305::params
+        #[allow(dead_code)]
+        aad: Vec<u8>,
+
+        /// Authentication tag
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::ChaCha20Poly1305::params
+        #[allow(dead_code)]
+        tag: Vec<u8>,
+    },
+    /// FFI Parameters for SA_CIPHER_ALGORITHM_RSA_OAEP
+    RsaOaep {
+        /// The FFI parameters that will be passed into the C API for the unwrap
+        /// value SA_CIPHER_ALGORITHM_RSA_OAEP
+        params: ffi::SaUnwrapParametersRsaOaep,
+
+        /// Label
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyUnwrapAlgorithmFfiParameters::RsaOaep::params
+        #[allow(dead_code)]
+        maybe_label: Option<Vec<u8>>,
+    },
 }
 
 impl FfiParameters for KeyUnwrapAlgorithmFfiParameters {
     fn ffi_ptr(&mut self) -> *mut c_void {
         match self {
-            Self::AesCbc(params, _) => params as *mut _ as *mut c_void,
-            Self::AesCbcPkcs7(params, _) => params as *mut _ as *mut c_void,
-            Self::AesCtr(params, _) => params as *mut _ as *mut c_void,
-            Self::AesGcm(params, _, _, _) => params as *mut _ as *mut c_void,
-            Self::ChaCha20(params, _, _) => params as *mut _ as *mut c_void,
-            Self::ChaCha20Poly1305(params, _, _, _) => params as *mut _ as *mut c_void,
-            Self::RsaOaep(params, _) => params as *mut _ as *mut c_void,
-        }
-    }
-}
-
-impl Drop for KeyUnwrapAlgorithmFfiParameters {
-    fn drop(&mut self) {
-        match self {
-            Self::AesCbc(_, iv_raw_ptr) => {
-                let _ = unsafe { Box::from_raw(iv_raw_ptr) };
-            }
-            Self::AesCbcPkcs7(_, iv_raw_ptr) => {
-                let _ = unsafe { Box::from_raw(iv_raw_ptr) };
-            }
-            Self::AesCtr(_, ctr_raw_ptr) => {
-                let _ = unsafe { Box::from_raw(ctr_raw_ptr) };
-            }
-            Self::AesGcm(
-                _,
-                iv_raw_ptr,
-                (aad_ptr, aad_len, aad_capacity),
-                (tag_ptr, tag_len, tag_capacity),
-            ) => {
-                let _ = unsafe { Box::from_raw(iv_raw_ptr) };
-                let _ = unsafe { Vec::from_raw_parts(aad_ptr, *aad_len, *aad_capacity) };
-                let _ = unsafe { Vec::from_raw_parts(tag_ptr, *tag_len, *tag_capacity) };
-            }
-            Self::ChaCha20(_, counter_raw_ptr, nonce_raw_ptr) => {
-                let _ = unsafe { Box::from_raw(counter_raw_ptr) };
-                let _ = unsafe { Box::from_raw(nonce_raw_ptr) };
-            }
-            Self::ChaCha20Poly1305(
-                _,
-                nonce_raw_ptr,
-                (aad_ptr, aad_len, aad_capacity),
-                (tag_ptr, tag_len, tag_capacity),
-            ) => {
-                let _ = unsafe { Box::from_raw(nonce_raw_ptr) };
-                let _ = unsafe { Vec::from_raw_parts(aad_ptr, *aad_len, *aad_capacity) };
-                let _ = unsafe { Vec::from_raw_parts(tag_ptr, *tag_len, *tag_capacity) };
-            }
-            Self::RsaOaep(_, maybe_label_parts) => {
-                if let Some((label_ptr, label_len, label_capacity)) = maybe_label_parts {
-                    let _ = unsafe { Vec::from_raw_parts(label_ptr, *label_len, *label_capacity) };
-                }
-            }
+            Self::AesCbc { params, .. } => params as *mut _ as *mut c_void,
+            Self::AesCbcPkcs7 { params, .. } => params as *mut _ as *mut c_void,
+            Self::AesCtr { params, .. } => params as *mut _ as *mut c_void,
+            Self::AesGcm { params, .. } => params as *mut _ as *mut c_void,
+            Self::ChaCha20 { params, .. } => params as *mut _ as *mut c_void,
+            Self::ChaCha20Poly1305 { params, .. } => params as *mut _ as *mut c_void,
+            Self::RsaOaep { params, .. } => params as *mut _ as *mut c_void,
         }
     }
 }
@@ -704,7 +721,8 @@ impl Drop for KeyUnwrapAlgorithmFfiParameters {
 #[derive(Debug)]
 pub enum KeyGenerateType {
     Symmetric {
-        /// Key length in bytes. Has to be greater than 16 and less than or equal to 512
+        /// Key length in bytes. Has to be greater than 16 and less than or
+        /// equal to 512
         key_length: usize,
     },
     Rsa {
@@ -726,45 +744,27 @@ pub enum KeyGenerateType {
 impl KeyGenerateType {
     fn into_ffi_parameters(self) -> KeyGenerateFfiParameters {
         match self {
-            Self::Symmetric { key_length } => {
-                KeyGenerateFfiParameters::Symmetric(ffi::SaGenerateParametersSymmetric {
-                    key_length,
-                })
-            }
-            Self::Rsa { modulus_length } => {
-                KeyGenerateFfiParameters::Rsa(ffi::SaGenerateParametersRsa { modulus_length })
-            }
-            Self::EllipticCurve { curve } => {
-                KeyGenerateFfiParameters::EllipticCurve(ffi::SaGenerateParametersEc {
+            Self::Symmetric { key_length } => KeyGenerateFfiParameters::Symmetric {
+                params: ffi::SaGenerateParametersSymmetric { key_length },
+            },
+            Self::Rsa { modulus_length } => KeyGenerateFfiParameters::Rsa {
+                params: ffi::SaGenerateParametersRsa { modulus_length },
+            },
+            Self::EllipticCurve { curve } => KeyGenerateFfiParameters::EllipticCurve {
+                params: ffi::SaGenerateParametersEc {
                     curve: curve.into(),
-                })
-            }
-            Self::DiffieHellman { prime, generator } => {
-                // Break the prime vector into its primitive parts
-                let prime_ptr = prime.as_ptr();
-                let prime_len = prime.len();
-                let prime_capacity = prime.capacity();
-
-                // Break the generator vector into its primitive parts
-                let generator_ptr = generator.as_ptr();
-                let generator_len = generator.len();
-                let generator_capacity = generator.capacity();
-
-                // Forget about the memory
-                std::mem::forget(prime);
-                std::mem::forget(generator);
-
-                KeyGenerateFfiParameters::DiffieHellman(
-                    ffi::SaGenerateParametersDh {
-                        p: prime_ptr as *const _,
-                        p_length: prime_len,
-                        g: generator_ptr as *const _,
-                        g_length: generator_len,
-                    },
-                    (prime_ptr, prime_len, prime_capacity),
-                    (generator_ptr, generator_len, generator_capacity),
-                )
-            }
+                },
+            },
+            Self::DiffieHellman { prime, generator } => KeyGenerateFfiParameters::DiffieHellman {
+                params: ffi::SaGenerateParametersDh {
+                    p: prime.as_ptr() as *const c_void,
+                    p_length: prime.len(),
+                    g: generator.as_ptr() as *const c_void,
+                    g_length: generator.len(),
+                },
+                prime,
+                generator,
+            },
         }
     }
 }
@@ -780,50 +780,71 @@ impl From<&KeyGenerateType> for ffi::SaKeyType {
     }
 }
 
+/// Provides the FFI generate parameters for the sa_key_generate() call
 #[derive(Debug)]
 enum KeyGenerateFfiParameters {
-    Symmetric(ffi::SaGenerateParametersSymmetric),
-    Rsa(ffi::SaGenerateParametersRsa),
-    EllipticCurve(ffi::SaGenerateParametersEc),
-    DiffieHellman(
-        ffi::SaGenerateParametersDh,
-        /// Prime Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-        /// Generator Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-    ),
+    /// FFI Parameters for SA_KEY_TYPE_SYMMETRIC
+    Symmetric {
+        /// The FFI parameters that will be passed into the C API for the
+        /// generate value SA_KEY_TYPE_SYMMETRIC
+        params: ffi::SaGenerateParametersSymmetric,
+    },
+    /// FFI Parameters for SA_KEY_TYPE_RSA
+    Rsa {
+        /// The FFI parameters that will be passed into the C API for the
+        /// generate value SA_KEY_TYPE_RSA
+        params: ffi::SaGenerateParametersRsa,
+    },
+    /// FFI Parameters for SA_KEY_TYPE_EC
+    EllipticCurve {
+        /// The FFI parameters that will be passed into the C API for the
+        /// generate value SA_KEY_TYPE_EC
+        params: ffi::SaGenerateParametersEc,
+    },
+    /// FFI Parameters for SA_KEY_TYPE_DH
+    DiffieHellman {
+        /// The FFI parameters that will be passed into the C API for the import
+        /// value SA_KEY_TYPE_DH
+        params: ffi::SaGenerateParametersDh,
+
+        /// Prime
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyGenerateFfiParameters::DiffieHellman::params
+        #[allow(dead_code)]
+        prime: Vec<u8>,
+
+        /// Generator
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyGenerateFfiParameters::DiffieHellman::params
+        #[allow(dead_code)]
+        generator: Vec<u8>,
+    },
 }
 
 impl FfiParameters for KeyGenerateFfiParameters {
     /// Casts the ffi structure to a c_void pointer
     fn ffi_ptr(&mut self) -> *mut c_void {
         match self {
-            Self::Symmetric(params) => params as *mut _ as *mut c_void,
-            Self::Rsa(params) => params as *mut _ as *mut c_void,
-            Self::EllipticCurve(params) => params as *mut _ as *mut c_void,
-            Self::DiffieHellman(params, _, _) => params as *mut _ as *mut c_void,
-        }
-    }
-}
-
-impl Drop for KeyGenerateFfiParameters {
-    fn drop(&mut self) {
-        if let KeyGenerateFfiParameters::DiffieHellman(
-            _,
-            (prime_ptr, prime_len, prime_capacity),
-            (generator_ptr, generator_len, generator_capacity),
-        ) = self
-        {
-            let _ = unsafe { Vec::from_raw_parts(prime_ptr, *prime_len, *prime_capacity) };
-            let _ =
-                unsafe { Vec::from_raw_parts(generator_ptr, *generator_len, *generator_capacity) };
+            Self::Symmetric { params, .. } => params as *mut _ as *mut c_void,
+            Self::Rsa { params, .. } => params as *mut _ as *mut c_void,
+            Self::EllipticCurve { params, .. } => params as *mut _ as *mut c_void,
+            Self::DiffieHellman { params, .. } => params as *mut _ as *mut c_void,
         }
     }
 }
 
 #[derive(Debug)]
 pub enum KeyDeriveParameters<'a> {
-    /// Root Key Ladder Key Derivation Function Algorithm--derives a key from the OTP root key
+    /// Root Key Ladder Key Derivation Function Algorithm--derives a key from
+    /// the OTP root key
     RootKeyLadder {
         /// Input for first stage of the key ladder
         c1: [u8; 16],
@@ -849,8 +870,8 @@ pub enum KeyDeriveParameters<'a> {
         /// Info value
         info: Vec<u8>,
     },
-    /// Concat Key Derivation Function Algorithm--a.k.a. the single step key derivation function
-    /// (SSKDF)
+    /// Concat Key Derivation Function Algorithm--a.k.a. the single step key
+    /// derivation function (SSKDF)
     ///
     /// See NIST SP 56A for definition
     Concat {
@@ -876,8 +897,8 @@ pub enum KeyDeriveParameters<'a> {
         /// Info value
         info: Vec<u8>,
     },
-    /// CMAC Key Derivation Function Algorithm--a.k.a. the key based key derivation function
-    /// (KBKDF)
+    /// CMAC Key Derivation Function Algorithm--a.k.a. the key based key
+    /// derivation function (KBKDF)
     ///
     /// See NIST SP 800-108 for definition
     Cmac {
@@ -885,7 +906,8 @@ pub enum KeyDeriveParameters<'a> {
         key_length: usize,
         /// Parent key
         parent: &'a Key,
-        ///  Other data value. Should be Label || 0x00 || Context || L according to NIST SP 800-108
+        ///  Other data value. Should be Label || 0x00 || Context || L according
+        /// to NIST SP 800-108
         other_data: Vec<u8>,
         /// Counter value. Has to be between 1 and 4 inclusive
         counter: u8,
@@ -900,8 +922,8 @@ pub enum KeyDeriveParameters<'a> {
         /// HMAC key handle
         hmac: &'a Key,
     },
-    /// Common Root Key Ladder Key Derivation Function Algorithm--derives a key from the common SoC
-    /// root key
+    /// Common Root Key Ladder Key Derivation Function Algorithm--derives a key
+    /// from the common SoC root key
     CommonRootKeyLadder {
         /// Input for first stage of the key ladder
         c1: [u8; 16],
@@ -932,11 +954,6 @@ impl<'a> KeyDeriveParameters<'a> {
     fn into_ffi_parameters(self) -> KeyKdfFfiParameters {
         match self {
             KeyDeriveParameters::RootKeyLadder { c1, c2, c3, c4 } => {
-                // These arrays must live long enough for the sa_key_derive() call.
-                // To accomplish this we will transfer ownership over to the heap and
-                // and then consume the box and return the raw pointer. This means that
-                // we are now responsible for cleaning up memory which we will handle in the
-                // KeyKdfFfiParameters Drop trait.
                 let c1_length = c1.len();
                 let c2_length = c2.len();
                 let c3_length = c3.len();
@@ -947,32 +964,22 @@ impl<'a> KeyDeriveParameters<'a> {
                 let c3_box = Box::new(c3);
                 let c4_box = Box::new(c4);
 
-                let c1_ptr = c1_box.as_ptr();
-                let c2_ptr = c2_box.as_ptr();
-                let c3_ptr = c3_box.as_ptr();
-                let c4_ptr = c4_box.as_ptr();
-
-                let c1_raw_ptr = Box::into_raw(c1_box);
-                let c2_raw_ptr = Box::into_raw(c2_box);
-                let c3_raw_ptr = Box::into_raw(c3_box);
-                let c4_raw_ptr = Box::into_raw(c4_box);
-
-                KeyKdfFfiParameters::RootKeyLadder(
-                    ffi::SaKdfParametersRootKeyLadder {
-                        c1: c1_ptr as *const _,
-                        c1_length,
-                        c2: c2_ptr as *const _,
-                        c2_length,
-                        c3: c3_ptr as *const _,
-                        c3_length,
-                        c4: c4_ptr as *const _,
-                        c4_length,
+                KeyKdfFfiParameters::RootKeyLadder {
+                    params: ffi::SaKdfParametersRootKeyLadder {
+                        c1: c1_box.as_ptr() as *const c_void,
+                        c1_length: c1_length as size_t,
+                        c2: c2_box.as_ptr() as *const c_void,
+                        c2_length: c2_length as size_t,
+                        c3: c3_box.as_ptr() as *const c_void,
+                        c3_length: c3_length as size_t,
+                        c4: c4_box.as_ptr() as *const c_void,
+                        c4_length: c4_length as size_t,
                     },
-                    c1_raw_ptr,
-                    c2_raw_ptr,
-                    c3_raw_ptr,
-                    c4_raw_ptr,
-                )
+                    c1: c1_box,
+                    c2: c2_box,
+                    c3: c3_box,
+                    c4: c4_box,
+                }
             }
             KeyDeriveParameters::Hkdf {
                 key_length,
@@ -980,126 +987,71 @@ impl<'a> KeyDeriveParameters<'a> {
                 parent,
                 salt,
                 info,
-            } => {
-                // Break the salt vector into its primitive parts
-                let salt_ptr = salt.as_ptr();
-                let salt_len = salt.len();
-                let salt_capacity = salt.capacity();
-
-                // Break the info vector into its primitive parts
-                let info_ptr = info.as_ptr();
-                let info_len = info.len();
-                let info_capacity = info.capacity();
-
-                // Drop the ownership. We are now responsible for cleaning up memory which
-                // we will handle in the KeyKdfFfiParameters Drop trait.
-                std::mem::forget(salt);
-                std::mem::forget(info);
-
-                KeyKdfFfiParameters::Hkdf(
-                    ffi::SaKdfParametersHkdf {
-                        key_length,
-                        digest_algorithm: digest_algorithm.into(),
-                        parent: parent.key_handle,
-                        salt: salt_ptr as *const _,
-                        salt_length: salt_len,
-                        info: info_ptr as *const _,
-                        info_length: info_len,
-                    },
-                    (salt_ptr, salt_len, salt_capacity),
-                    (info_ptr, info_len, info_capacity),
-                )
-            }
+            } => KeyKdfFfiParameters::Hkdf {
+                params: ffi::SaKdfParametersHkdf {
+                    key_length,
+                    digest_algorithm: digest_algorithm.into(),
+                    parent: parent.key_handle,
+                    salt: salt.as_ptr() as *const c_void,
+                    salt_length: salt.len() as size_t,
+                    info: info.as_ptr() as *const c_void,
+                    info_length: info.len() as size_t,
+                },
+                salt,
+                info,
+            },
             KeyDeriveParameters::Concat {
                 key_length,
                 digest_algorithm,
                 parent,
                 info,
-            } => {
-                // Break the info vector into its primitive parts
-                let info_ptr = info.as_ptr();
-                let info_len = info.len();
-                let info_capacity = info.capacity();
-
-                // Drop the ownership. We are now responsible for cleaning up memory which
-                // we will handle in the KeyKdfFfiParameters Drop trait.
-                std::mem::forget(info);
-
-                KeyKdfFfiParameters::Concat(
-                    ffi::SaKdfParametersConcat {
-                        key_length,
-                        digest_algorithm: digest_algorithm.into(),
-                        parent: parent.key_handle,
-                        info: info_ptr as *const _,
-                        info_length: info_len,
-                    },
-                    (info_ptr, info_len, info_capacity),
-                )
-            }
+            } => KeyKdfFfiParameters::Concat {
+                params: ffi::SaKdfParametersConcat {
+                    key_length,
+                    digest_algorithm: digest_algorithm.into(),
+                    parent: parent.key_handle,
+                    info: info.as_ptr() as *const c_void,
+                    info_length: info.len() as size_t,
+                },
+                info,
+            },
             KeyDeriveParameters::AnsiX963 {
                 key_length,
                 digest_algorithm,
                 parent,
                 info,
-            } => {
-                // Break the info vector into its primitive parts
-                let info_ptr = info.as_ptr();
-                let info_len = info.len();
-                let info_capacity = info.capacity();
-
-                // Drop the ownership. We are now responsible for cleaning up memory which
-                // we will handle in the KeyKdfFfiParameters Drop trait.
-                std::mem::forget(info);
-
-                KeyKdfFfiParameters::AnsiX963(
-                    ffi::SaKdfParametersAnsiX963 {
-                        key_length,
-                        digest_algorithm: digest_algorithm.into(),
-                        parent: parent.key_handle,
-                        info: info_ptr as *const _,
-                        info_length: info_len,
-                    },
-                    (info_ptr, info_len, info_capacity),
-                )
-            }
+            } => KeyKdfFfiParameters::AnsiX963 {
+                params: ffi::SaKdfParametersAnsiX963 {
+                    key_length,
+                    digest_algorithm: digest_algorithm.into(),
+                    parent: parent.key_handle,
+                    info: info.as_ptr() as *const c_void,
+                    info_length: info.len() as size_t,
+                },
+                info,
+            },
             KeyDeriveParameters::Cmac {
                 key_length,
                 parent,
                 other_data,
                 counter,
-            } => {
-                // Break the other_data vector into its primitive parts
-                let other_data_ptr = other_data.as_ptr();
-                let other_data_len = other_data.len();
-                let other_data_capacity = other_data.capacity();
-
-                // Drop the ownership. We are now responsible for cleaning up memory which
-                // we will handle in the KeyKdfFfiParameters Drop trait.
-                std::mem::forget(other_data);
-
-                KeyKdfFfiParameters::Cmac(
-                    ffi::SaKdfParametersCmac {
-                        key_length,
-                        parent: parent.key_handle,
-                        other_data: other_data_ptr as *const _,
-                        other_data_length: other_data_len,
-                        counter,
-                    },
-                    (other_data_ptr, other_data_len, other_data_capacity),
-                )
-            }
-            KeyDeriveParameters::Netflix { kenc, hmac } => {
-                KeyKdfFfiParameters::Netflix(ffi::SaKdfParametersNetflix {
+            } => KeyKdfFfiParameters::Cmac {
+                params: ffi::SaKdfParametersCmac {
+                    key_length,
+                    parent: parent.key_handle,
+                    other_data: other_data.as_ptr() as *const c_void,
+                    other_data_length: other_data.len() as size_t,
+                    counter,
+                },
+                other_data,
+            },
+            KeyDeriveParameters::Netflix { kenc, hmac } => KeyKdfFfiParameters::Netflix {
+                params: ffi::SaKdfParametersNetflix {
                     kenc: kenc.key_handle,
                     hmac: hmac.key_handle,
-                })
-            }
+                },
+            },
             KeyDeriveParameters::CommonRootKeyLadder { c1, c2, c3, c4 } => {
-                // These arrays must live long enough for the sa_key_derive() call.
-                // To accomplish this we will transfer ownership over to the heap and
-                // and then consume the box and return the raw pointer. This means that
-                // we are now responsible for cleaning up memory which we will handle in the
-                // KeyKdfFfiParameters Drop trait.
                 let c1_length = c1.len();
                 let c2_length = c2.len();
                 let c3_length = c3.len();
@@ -1110,32 +1062,22 @@ impl<'a> KeyDeriveParameters<'a> {
                 let c3_box = Box::new(c3);
                 let c4_box = Box::new(c4);
 
-                let c1_ptr = c1_box.as_ptr();
-                let c2_ptr = c2_box.as_ptr();
-                let c3_ptr = c3_box.as_ptr();
-                let c4_ptr = c4_box.as_ptr();
-
-                let c1_raw_ptr = Box::into_raw(c1_box);
-                let c2_raw_ptr = Box::into_raw(c2_box);
-                let c3_raw_ptr = Box::into_raw(c3_box);
-                let c4_raw_ptr = Box::into_raw(c4_box);
-
-                KeyKdfFfiParameters::CommonRootKeyLadder(
-                    ffi::SaKdfParametersRootKeyLadder {
-                        c1: c1_ptr as *const _,
-                        c1_length,
-                        c2: c2_ptr as *const _,
-                        c2_length,
-                        c3: c3_ptr as *const _,
-                        c3_length,
-                        c4: c4_ptr as *const _,
-                        c4_length,
+                KeyKdfFfiParameters::CommonRootKeyLadder {
+                    params: ffi::SaKdfParametersRootKeyLadder {
+                        c1: c1_box.as_ptr() as *const c_void,
+                        c1_length: c1_length as size_t,
+                        c2: c2_box.as_ptr() as *const c_void,
+                        c2_length: c2_length as size_t,
+                        c3: c3_box.as_ptr() as *const c_void,
+                        c3_length: c3_length as size_t,
+                        c4: c4_box.as_ptr() as *const c_void,
+                        c4_length: c4_length as size_t,
                     },
-                    c1_raw_ptr,
-                    c2_raw_ptr,
-                    c3_raw_ptr,
-                    c4_raw_ptr,
-                )
+                    c1: c1_box,
+                    c2: c2_box,
+                    c3: c3_box,
+                    c4: c4_box,
+                }
             }
         }
     }
@@ -1143,103 +1085,191 @@ impl<'a> KeyDeriveParameters<'a> {
 
 #[derive(Debug)]
 enum KeyKdfFfiParameters {
-    RootKeyLadder(
-        ffi::SaKdfParametersRootKeyLadder,
-        /// Box pointer to c1
-        *mut [u8; 16],
-        /// Box pointer to c2
-        *mut [u8; 16],
-        /// Box pointer to c3
-        *mut [u8; 16],
-        /// Box pointer to c4
-        *mut [u8; 16],
-    ),
-    Hkdf(
-        ffi::SaKdfParametersHkdf,
-        /// Salt Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-        /// Info Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-    ),
-    Concat(
-        ffi::SaKdfParametersConcat,
-        /// Info Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-    ),
-    AnsiX963(
-        ffi::SaKdfParametersAnsiX963,
-        /// Info Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-    ),
-    Cmac(
-        ffi::SaKdfParametersCmac,
-        /// other_data Vec's primitive parts (pointer, size, capacity)
-        (*const u8, usize, usize),
-    ),
-    Netflix(ffi::SaKdfParametersNetflix),
-    CommonRootKeyLadder(
-        ffi::SaKdfParametersRootKeyLadder,
-        /// Box pointer to c1
-        *mut [u8; 16],
-        /// Box pointer to c2
-        *mut [u8; 16],
-        /// Box pointer to c3
-        *mut [u8; 16],
-        /// Box pointer to c4
-        *mut [u8; 16],
-    ),
+    /// FFI Parameters for SA_KDF_ALGORITHM_ROOT_KEY_LADDER
+    RootKeyLadder {
+        /// The FFI parameters that will be passed into the C API for the derive
+        /// value SA_KDF_ALGORITHM_ROOT_KEY_LADDER
+        params: ffi::SaKdfParametersRootKeyLadder,
+
+        /// Input for first stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::RootKeyLadder::params
+        #[allow(dead_code)]
+        c1: Box<[u8; 16]>,
+
+        /// Input for second stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::RootKeyLadder::params
+        #[allow(dead_code)]
+        c2: Box<[u8; 16]>,
+
+        /// Input for third stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::RootKeyLadder::params
+        #[allow(dead_code)]
+        c3: Box<[u8; 16]>,
+
+        /// Input for fourth stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::RootKeyLadder::params
+        #[allow(dead_code)]
+        c4: Box<[u8; 16]>,
+    },
+    /// FFI Parameters for SA_KDF_ALGORITHM_HKDF
+    Hkdf {
+        /// The FFI parameters that will be passed into the C API for the derive
+        /// value SA_KDF_ALGORITHM_HKDF
+        params: ffi::SaKdfParametersHkdf,
+
+        /// Salt value
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::Hkdf::params
+        #[allow(dead_code)]
+        salt: Vec<u8>,
+
+        /// Info value
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::Hkdf::params
+        #[allow(dead_code)]
+        info: Vec<u8>,
+    },
+    /// FFI Parameters for SA_KDF_ALGORITHM_CONCAT
+    Concat {
+        /// The FFI parameters that will be passed into the C API for the derive
+        /// value SA_KDF_ALGORITHM_CONCAT
+        params: ffi::SaKdfParametersConcat,
+
+        /// Info value
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::Concat::params
+        #[allow(dead_code)]
+        info: Vec<u8>,
+    },
+    /// FFI Parameters for SA_KDF_ALGORITHM_ANSI_X963
+    AnsiX963 {
+        /// The FFI parameters that will be passed into the C API for the derive
+        /// value SA_KDF_ALGORITHM_ANSI_X963
+        params: ffi::SaKdfParametersAnsiX963,
+
+        /// Info value
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::AnsiX963::params
+        #[allow(dead_code)]
+        info: Vec<u8>,
+    },
+    /// FFI Parameters for SA_KDF_ALGORITHM_CMAC
+    Cmac {
+        /// The FFI parameters that will be passed into the C API for the derive
+        /// value SA_KDF_ALGORITHM_CMAC
+        params: ffi::SaKdfParametersCmac,
+
+        /// Other data
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::Cmac::params
+        #[allow(dead_code)]
+        other_data: Vec<u8>,
+    },
+    /// FFI Parameters for SA_KDF_ALGORITHM_NETFLIX
+    Netflix {
+        /// The FFI parameters that will be passed into the C API for the derive
+        /// value SA_KDF_ALGORITHM_NETFLIX
+        params: ffi::SaKdfParametersNetflix,
+    },
+    /// FFI Parameters for SA_KDF_ALGORITHM_ROOT_KEY_LADDER
+    CommonRootKeyLadder {
+        /// The FFI parameters that will be passed into the C API for the derive
+        /// value SA_KDF_ALGORITHM_ROOT_KEY_LADDER
+        params: ffi::SaKdfParametersRootKeyLadder,
+
+        /// Input for first stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::CommonRootKeyLadder::params
+        #[allow(dead_code)]
+        c1: Box<[u8; 16]>,
+
+        /// Input for second stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::CommonRootKeyLadder::params
+        #[allow(dead_code)]
+        c2: Box<[u8; 16]>,
+
+        /// Input for third stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::CommonRootKeyLadder::params
+        #[allow(dead_code)]
+        c3: Box<[u8; 16]>,
+
+        /// Input for fourth stage of the key ladder
+        ///
+        /// Note: We use `#[allow(dead_code)]` since this item is never read but
+        /// a pointer is used in the FFI parameter [`params`] that will be read
+        /// by the C API.
+        ///
+        /// [`params`]: KeyKdfFfiParameters::CommonRootKeyLadder::params
+        #[allow(dead_code)]
+        c4: Box<[u8; 16]>,
+    },
 }
 
 impl FfiParameters for KeyKdfFfiParameters {
     /// Casts the ffi structure to a c_void pointer
     fn ffi_ptr(&mut self) -> *mut c_void {
         match self {
-            Self::RootKeyLadder(params, ..) => params as *mut _ as *mut c_void,
-            Self::Hkdf(params, ..) => params as *mut _ as *mut c_void,
-            Self::Concat(params, ..) => params as *mut _ as *mut c_void,
-            Self::AnsiX963(params, ..) => params as *mut _ as *mut c_void,
-            Self::Cmac(params, ..) => params as *mut _ as *mut c_void,
-            Self::Netflix(params) => params as *mut _ as *mut c_void,
-            Self::CommonRootKeyLadder(params, ..) => params as *mut _ as *mut c_void,
-        }
-    }
-}
-
-impl Drop for KeyKdfFfiParameters {
-    fn drop(&mut self) {
-        match self {
-            Self::RootKeyLadder(_, c1_ptr, c2_ptr, c3_ptr, c4_ptr) => {
-                let _ = unsafe { Box::from_raw(c1_ptr) };
-                let _ = unsafe { Box::from_raw(c2_ptr) };
-                let _ = unsafe { Box::from_raw(c3_ptr) };
-                let _ = unsafe { Box::from_raw(c4_ptr) };
-            }
-            Self::Hkdf(
-                _,
-                (salt_ptr, salt_len, salt_capacity),
-                (info_ptr, info_len, info_capacity),
-            ) => {
-                let _ = unsafe { Vec::from_raw_parts(salt_ptr, *salt_len, *salt_capacity) };
-                let _ = unsafe { Vec::from_raw_parts(info_ptr, *info_len, *info_capacity) };
-            }
-            Self::Concat(_, (info_ptr, info_len, info_capacity)) => {
-                let _ = unsafe { Vec::from_raw_parts(info_ptr, *info_len, *info_capacity) };
-            }
-            Self::AnsiX963(_, (info_ptr, info_len, info_capacity)) => {
-                let _ = unsafe { Vec::from_raw_parts(info_ptr, *info_len, *info_capacity) };
-            }
-            Self::Cmac(_, (other_data_ptr, other_data_len, other_data_capacity)) => {
-                let _ = unsafe {
-                    Vec::from_raw_parts(other_data_ptr, *other_data_len, *other_data_capacity)
-                };
-            }
-            Self::Netflix(_) => {}
-            Self::CommonRootKeyLadder(_, c1_ptr, c2_ptr, c3_ptr, c4_ptr) => {
-                let _ = unsafe { Box::from_raw(c1_ptr) };
-                let _ = unsafe { Box::from_raw(c2_ptr) };
-                let _ = unsafe { Box::from_raw(c3_ptr) };
-                let _ = unsafe { Box::from_raw(c4_ptr) };
-            }
+            Self::RootKeyLadder { params, .. } => params as *mut _ as *mut c_void,
+            Self::Hkdf { params, .. } => params as *mut _ as *mut c_void,
+            Self::Concat { params, .. } => params as *mut _ as *mut c_void,
+            Self::AnsiX963 { params, .. } => params as *mut _ as *mut c_void,
+            Self::Cmac { params, .. } => params as *mut _ as *mut c_void,
+            Self::Netflix { params } => params as *mut _ as *mut c_void,
+            Self::CommonRootKeyLadder { params, .. } => params as *mut _ as *mut c_void,
         }
     }
 }
@@ -1339,14 +1369,6 @@ impl FfiParameters for KeySignFfiParameters {
     }
 }
 
-impl Drop for KeySignFfiParameters {
-    fn drop(&mut self) {
-        match self {
-            Self::RsaPss(_) | Self::RsaPkcs1v15(_) | Self::Ecdsa(_) | Self::Eddsa => {}
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct KeyHeader {
     ///  Fixed "sak0" value used for identifying the exported key container.
@@ -1397,8 +1419,8 @@ pub struct PublicKey {
     ///
     /// Additional RSA public key info is defined in RFC 3279
     /// Additional EC public key info is defined in RFC 5480
-    /// Additional ED25519, X25519, ED448, and X448 public keys info is defined in RFC 8410.
-    /// Additional DH public key info is defined in RFC 3279
+    /// Additional ED25519, X25519, ED448, and X448 public keys info is defined
+    /// in RFC 8410. Additional DH public key info is defined in RFC 3279
     pub public_component: Vec<u8>,
 }
 
@@ -1408,6 +1430,49 @@ pub struct Key {
 }
 
 impl Key {
+    /// Import a key
+    ///
+    /// Imports a key into SecAPI.
+    /// * Symmetric keys are raw bytes in big-endian byte order.
+    /// * Asymmetric Private Keys must be in the OneAsymmetricKey format as defined in RFC 5958
+    ///   (this obsoletes the PKCS 8 format defined in RFC 5208).
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - A string slice that holds the name of the person
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use secapi::{
+    ///     crypto,
+    ///     key::{Key, KeyImportFormat, KeyType},
+    ///     Rights,
+    /// };
+    ///
+    /// const SYM_128_KEY_SIZE: usize = 16;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// // Generate random bytes using the crypto::random_bytes function
+    /// let random_bytes = crypto::random_bytes(SYM_128_KEY_SIZE)?;
+    ///
+    /// // Load the randomly generated bytes as a symmetric key
+    /// let key = Key::import(
+    ///     KeyImportFormat::SymmetricBytes {
+    ///         rights: Rights::allow_all(),
+    ///     },
+    ///     random_bytes.as_slice(),
+    /// )?;
+    ///
+    /// let header = key.header()?;
+    /// assert_eq!(header.magic, ['s', 'a', 'k', '0']);
+    /// assert_eq!(header.rights, Rights::allow_all());
+    /// assert_eq!(header.key_type, KeyType::Symmetric);
+    /// assert_eq!(header.size, SYM_128_KEY_SIZE as u16);
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn import(format: KeyImportFormat, bytes: &[u8]) -> Result<Self, ErrorStatus> {
         let mut key_handle: ffi::SaKey = ffi::INVALID_HANDLE;
 
@@ -1416,9 +1481,9 @@ impl Key {
 
         convert_result(unsafe {
             ffi::sa_key_import(
-                &mut key_handle as *mut _,
+                &mut key_handle as *mut ffi::SaKey,
                 key_format,
-                bytes.as_ptr() as *const _,
+                bytes.as_ptr() as *const c_void,
                 bytes.len(),
                 parameters.ffi_ptr(),
             )
@@ -1427,6 +1492,12 @@ impl Key {
         Ok(Self { key_handle })
     }
 
+    /// Unwrap a key
+    ///
+    /// Unwraps a key into SecAPI
+    /// * Symmetric keys are raw bytes in big-endian byte order.
+    /// * Asymmetric Private Keys must be in the OneAsymmetricKey format as defined in RFC 5958
+    ///   (this obsoletes the PKCS 8 format defined in RFC 5208).
     pub fn unwrap(
         rights: Rights,
         key_type_params: KeyUnwrapTypeParameters,
@@ -1487,8 +1558,8 @@ impl Key {
     pub fn export(&self, mut mixin: Option<[u8; 16]>) -> Result<Vec<u8>, ErrorStatus> {
         let mut out_length: size_t = 0;
 
-        // The mixin can either be provided or not. If the caller did not provide it, the FFI
-        // will expect a nullptr.
+        // The mixin can either be provided or not. If the caller did not provide it,
+        // the FFI will expect a nullptr.
         let mixin_ptr = match &mut mixin {
             Some(mixin) => mixin.as_mut_ptr() as *mut c_void,
             None => null_mut(),
@@ -1564,9 +1635,10 @@ impl Key {
     }
 
     pub fn header(&self) -> Result<KeyHeader, ErrorStatus> {
-        // Since header is an output variable, we must populate it with values. These values
-        // will be overridden by the ffi::sa_key_header call but the memory needs to exist
-        // and be initialized in order for Rust to be happy.
+        // Since header is an output variable, we must populate it with values. These
+        // values will be overridden by the ffi::sa_key_header call but the
+        // memory needs to exist and be initialized in order for Rust to be
+        // happy.
         let mut header = ffi::SaHeader {
             magic: [0; 4],
             rights: Rights::allow_all().into(),
@@ -1663,7 +1735,7 @@ impl Drop for Key {
 
 #[cfg(test)]
 mod test {
-    use super::{Key, KeyGenerateType, KeyImportFormat};
+    use super::{Key, KeyDeriveParameters, KeyGenerateType, KeyImportFormat};
     use crate::{crypto, key::KeyType, DigestAlgorithm, ErrorStatus, Rights};
 
     // The following are randomly generated keys, used for test cases. They are
@@ -2176,6 +2248,21 @@ mod test {
         let import_result = Key::import(KeyImportFormat::RsaPrivateKeyInfo { rights }, &RSA_6144);
 
         assert!(matches!(import_result, Err(ErrorStatus::InvalidParameter)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_key_concat_derive() -> Result<(), ErrorStatus> {
+        let _ = Key::derive(
+            Rights::allow_all(),
+            KeyDeriveParameters::RootKeyLadder {
+                c1: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                c2: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                c3: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+                c4: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            },
+        );
 
         Ok(())
     }
