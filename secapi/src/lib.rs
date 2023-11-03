@@ -1,20 +1,20 @@
 /**
-* Copyright 2023 Comcast Cable Communications Management, LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright 2023 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 use std::{error::Error, fmt::Display};
 
 use bitflags::bitflags;
@@ -35,11 +35,14 @@ pub enum ErrorStatus {
     NullParameter,
     /// Operation failed due to invalid parameter value for specified algorithm
     InvalidParameter,
-    /// Operation failed due to key rights enforcement. One or more preconditions required by the key rights were not met
+    /// Operation failed due to key rights enforcement. One or more
+    /// preconditions required by the key rights were not met
     OperationNotAllowed,
-    /// Operation failed due to SVP buffer not being fully contained within secure SVP region
+    /// Operation failed due to SVP buffer not being fully contained within
+    /// secure SVP region
     InvalidSvpBuffer,
-    /// Operation failed due to the combination of parameters not being supported in the implementation
+    /// Operation failed due to the combination of parameters not being
+    /// supported in the implementation
     OperationNotSupported,
     /// Operation failed due to self-test failure
     SelfTest,
@@ -72,10 +75,11 @@ impl Display for ErrorStatus {
     }
 }
 
-// Implement the TryFrom for ffi::SaStatus. The tricky part here is that we don't convert
-// directly into ErrorStatus but instead Result<(), ErrorStatus>. The reason for this is that
-// the ffi::SaStatus has the Ok status. Since ErrorStatus only contains errors we can't directly
-// convert between the types because for the SaStatus::OK case we want return Ok(()).
+// Implement the TryFrom for ffi::SaStatus. The tricky part here is that we
+// don't convert directly into ErrorStatus but instead Result<(), ErrorStatus>.
+// The reason for this is that the ffi::SaStatus has the Ok status. Since
+// ErrorStatus only contains errors we can't directly convert between the types
+// because for the SaStatus::OK case we want return Ok(()).
 fn convert_result(sa_status: ffi::SaStatus) -> Result<(), ErrorStatus> {
     match sa_status {
         ffi::SaStatus::OK => Ok(()),
@@ -243,8 +247,9 @@ pub struct Rights {
     not_before: NaiveDateTime,
     /// End of the key validity period
     not_on_or_after: NaiveDateTime,
-    /// List of TAs that are allowed to wield this key. All entries in the array are compared to the
-    /// calling TA's UUID. If any of them match key is allowed to be used by the TA.
+    /// List of TAs that are allowed to wield this key. All entries in the array
+    /// are compared to the calling TA's UUID. If any of them match key is
+    /// allowed to be used by the TA.
     ///
     /// There are two special case values:
     ///   * 0x00000000000000000000000000000000 matches no TAs.
@@ -266,7 +271,7 @@ impl Rights {
                 | UsageFlags::CACHEABLE,
             child_usage_flags: UsageFlags::empty(),
             not_before: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-            /// The max possible date: (December 31, 262143 CE)
+            // The max possible date: (December 31, 262143 CE)
             not_on_or_after: NaiveDate::from_ymd_opt(262143, 12, 31)
                 .unwrap()
                 .and_hms_opt(0, 0, 0)
@@ -402,16 +407,7 @@ impl From<DigestAlgorithm> for ffi::SaDigestAlgorithm {
 }
 
 /// Represents parameters passed into FFI functions using a void*
-///
-/// We turn of the drop_bounds warning. Since FFI data structures can hold
-/// raw pointers, the Rust borrow checker will not be able resolve them. FfiParameters
-/// must always implement the Drop trait to force the developer to content with any memory
-/// clean.
-#[allow(drop_bounds)]
-trait FfiParameters
-where
-    Self: Drop,
-{
+trait FfiParameters {
     /// Return the void pointer to the ffi structure the function is expecting
     fn ffi_ptr(&mut self) -> *mut c_void;
 }

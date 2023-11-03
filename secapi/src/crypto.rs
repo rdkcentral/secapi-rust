@@ -1,20 +1,20 @@
 /**
-* Copyright 2023 Comcast Cable Communications Management, LLC
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*
-* SPDX-License-Identifier: Apache-2.0
-*/
+ * Copyright 2023 Comcast Cable Communications Management, LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 use libc::size_t;
 use secapi_sys as ffi;
 use std::{ffi::c_void, ptr::null_mut};
@@ -66,33 +66,25 @@ impl MacInitParameters {
     fn into_ffi_parameters(self) -> MacInitFfiParameters {
         match self {
             Self::CMac => MacInitFfiParameters::CMac,
-            Self::HMac { digest_algorithm } => {
-                MacInitFfiParameters::HMac(ffi::SaMacParametersHmac {
+            Self::HMac { digest_algorithm } => MacInitFfiParameters::HMac {
+                params: ffi::SaMacParametersHmac {
                     digest_algorithm: digest_algorithm.into(),
-                })
-            }
+                },
+            },
         }
     }
 }
 
 enum MacInitFfiParameters {
     CMac,
-    HMac(ffi::SaMacParametersHmac),
+    HMac { params: ffi::SaMacParametersHmac },
 }
 
 impl FfiParameters for MacInitFfiParameters {
     fn ffi_ptr(&mut self) -> *mut c_void {
         match self {
             Self::CMac => null_mut(),
-            Self::HMac(params) => params as *mut _ as *mut c_void,
-        }
-    }
-}
-
-impl Drop for MacInitFfiParameters {
-    fn drop(&mut self) {
-        match self {
-            Self::CMac | Self::HMac(_) => {}
+            Self::HMac { params, .. } => params as *mut _ as *mut c_void,
         }
     }
 }
