@@ -1,5 +1,6 @@
 # Unreleased
 
+- Added functions in sa.h
 - Fixed workflow file
 - Fixed char to libc::c_char conversion
 - Increase the column width to 100

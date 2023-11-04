@@ -215,6 +215,15 @@ assert_eq!(header.size, 128);
 
 ## Current Implementation Status
 
+### sa.h
+
+| Function           | Implemented | Unit Tested | Rust Counterpart |
+| ------------------ | ----------- | ----------- | ---------------- |
+| `sa_get_version`   | ✅          | ✅          | `version`        |
+| `sa_get_name`      | ✅          | ✅          | `name`           |
+| `sa_get_device_id` | ✅          | ✅          | `device_id`      |
+| `sa_get_ta_uuid`   | ✅          | ✅          | `ta_uuid`        |
+
 ### sa_crypto.h
 
 | Function                        | Implemented | Unit Tested | Rust Counterpart                                             |
