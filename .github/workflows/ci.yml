@@ -7,18 +7,16 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: Test
+  build_and_test_x64:
+    name: Build and Test on x64 ${{ matrix.rust }}
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        os:
-          - ubuntu-20.04
-          - ubuntu-22.04
         rust:
           - stable
           - beta
           - nightly
-    runs-on: ${{ matrix.os }}
+
     steps:
       - name: Install YAJL
         run: sudo apt-get install -y libyajl-dev
@@ -30,7 +28,6 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
         with:
-          lfs: true
           submodules: recursive
 
       - name: Install toolchain
@@ -59,3 +56,47 @@ jobs:
       - name: Build
         run: |
           cargo build --release
+
+  build_and_test_aarch64:
+    name: Build and Test on aarch64 ${{ matrix.rust }}
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+          - nightly
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build and Test
+        uses: uraimo/run-on-arch-action@v2.5.1
+        id: build_and_test
+        with:
+          arch: aarch64
+          distro: ubuntu22.04
+          githubToken: ${{ github.token }}
+          install: |
+            apt-get update -q -y
+            apt-get install -q -y --no-install-recommends \
+              ca-certificates \
+              git \
+              build-essential \
+              cmake \
+              curl \
+              libyajl-dev \
+              libssl-dev
+            curl --proto '=https' -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${{ matrix.rust }} --component "rustfmt, clippy"
+          run: |
+            source "$HOME/.cargo/env"
+            cargo --version --verbose
+            rustc --version
+            cargo clippy --version
+            cargo fmt -- --check
+            cargo clippy -- -D warnings
+            cargo check
+            ROOT_KEYSTORE="${GITHUB_WORKSPACE}/root_keystore.p12" cargo test --all
+            cargo build --release
