@@ -1,5 +1,7 @@
 # Unreleased
 
+- Enable the `BUILD_TESTS` cmake variable to disable the compilation of unit tests
+- Updated tasecureapi submodule to `d049be2`
 - Added functions in sa.h
 - Fixed workflow file
 - Fixed char to libc::c_char conversion

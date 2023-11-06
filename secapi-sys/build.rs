@@ -43,6 +43,7 @@ fn main() {
         let status = Command::new("cmake")
             .args(["-S", "reference"])
             .args(["-B", "reference/cmake-build"])
+            .args(["-DBUILD_TESTS=FALSE"])
             .status()
             .expect("Cmake could not be run. Is it installed?");
         assert!(status.success(), "Cmake failed to configure tasecureapi");
