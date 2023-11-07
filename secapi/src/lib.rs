@@ -15,11 +15,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, ptr::null_mut};
 
 use bitflags::bitflags;
 use chrono::{NaiveDate, NaiveDateTime};
-use libc::c_void;
+use libc::{c_char, c_void, size_t};
 use secapi_sys as ffi;
 use uuid::Uuid;
 
@@ -415,3 +415,199 @@ trait FfiParameters {
 pub mod crypto;
 pub mod key;
 pub mod svp;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Version {
+    /// Major version of the SecAPI specification
+    pub specification_major: u64,
+
+    /// Minor version of the SecAPI specification
+    pub specification_minor: u64,
+
+    /// Revision version of the SecAPI specification
+    pub specification_revision: u64,
+
+    /// implementation_revision
+    pub implementation_revision: u64,
+}
+
+impl From<ffi::SaVersion> for Version {
+    fn from(value: ffi::SaVersion) -> Self {
+        Version {
+            specification_major: value.specification_major,
+            specification_minor: value.specification_minor,
+            specification_revision: value.specification_revision,
+            implementation_revision: value.implementation_revision,
+        }
+    }
+}
+
+/// Obtain the firmware version
+///
+/// Obtains the firmware version of the currently implementation of secapi
+///
+/// # Examples
+///
+/// ```no_run
+/// use secapi::version;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// // Get the secapi version
+/// let secapi_version = version()?;
+///
+/// println!(
+///     "SecAPI Version {}.{}",
+///     secapi_version.specification_major, secapi_version.specification_minor
+/// );
+///
+/// # Ok(())
+/// # }
+/// ```
+pub fn version() -> Result<Version, ErrorStatus> {
+    let mut sa_version = ffi::SaVersion {
+        specification_major: 0,
+        specification_minor: 0,
+        specification_revision: 0,
+        implementation_revision: 0,
+    };
+
+    convert_result(unsafe { ffi::sa_get_version(&mut sa_version) })?;
+
+    Ok(sa_version.into())
+}
+
+/// Obtain the SecAPI implementation name, e.g. SoC manufacturer.
+///
+/// # Examples
+///
+/// ```no_run
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// // Get the implementation name
+/// let implementation_name = secapi::name()?;
+///
+/// println!("{}", implementation_name);
+///
+/// # Ok(())
+/// # }
+/// ```
+pub fn name() -> Result<String, ErrorStatus> {
+    let mut name_size: size_t = 0;
+
+    convert_result(unsafe { ffi::sa_get_name(null_mut(), &mut name_size) })?;
+
+    let mut name_buffer: Vec<c_char> = vec![0; name_size];
+
+    convert_result(unsafe { ffi::sa_get_name(name_buffer.as_mut_ptr(), &mut name_size) })?;
+
+    String::from_utf8(
+        name_buffer
+            .into_iter()
+            .take_while(|value| *value != 0)
+            .map(|value| value as _)
+            .collect(),
+    )
+    .map_err(|_| ErrorStatus::InvalidParameter)
+}
+
+/// Obtain the device ID
+///
+/// ID will be formatted according to the "SoC Identifier Specification"
+///
+/// # Examples
+///
+/// ```no_run
+/// use secapi::device_id;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// // Get the device id
+/// let soc_id = device_id()?;
+///
+/// println!("{:?}", soc_id.to_be_bytes());
+///
+/// # Ok(())
+/// # }
+/// ```
+pub fn device_id() -> Result<u64, ErrorStatus> {
+    let mut device_id = 0;
+
+    convert_result(unsafe { ffi::sa_get_device_id(&mut device_id) })?;
+
+    Ok(device_id)
+}
+
+/// Obtain the UUID of the TA making this call
+///
+/// # Examples
+///
+/// ```no_run
+/// use secapi::ta_uuid;
+///
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// // Get the UUID of the TA
+/// let uuid = ta_uuid()?;
+///
+/// println!("{:?}", uuid);
+///
+/// # Ok(())
+/// # }
+/// ```
+pub fn ta_uuid() -> Result<Uuid, ErrorStatus> {
+    let mut sa_uuid = ffi::SaUuid { id: [0; 16] };
+
+    convert_result(unsafe { ffi::sa_get_ta_uuid(&mut sa_uuid) })?;
+
+    Ok(Uuid::from_bytes(sa_uuid.id))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_secapi_version() -> Result<(), ErrorStatus> {
+        let secapi_version = version()?;
+
+        assert_eq!(secapi_version.specification_major, 3);
+        assert_eq!(secapi_version.specification_minor, 3);
+        assert_eq!(secapi_version.specification_revision, 0);
+        assert_eq!(secapi_version.implementation_revision, 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_secapi_name() -> Result<(), ErrorStatus> {
+        let secapi_name = name()?;
+
+        assert_eq!(secapi_name, "Reference");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_device_id() -> Result<(), ErrorStatus> {
+        let device_id = device_id()?;
+
+        assert_eq!(
+            device_id.to_be_bytes(),
+            [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe]
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_ta_uuid() -> Result<(), ErrorStatus> {
+        let uuid = ta_uuid()?;
+
+        assert_eq!(
+            uuid,
+            Uuid::from_bytes([
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x01
+            ])
+        );
+
+        Ok(())
+    }
+}
