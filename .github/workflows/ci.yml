@@ -15,7 +15,6 @@ jobs:
         rust:
           - stable
           - beta
-          - nightly
 
     steps:
       - name: Install YAJL
@@ -65,7 +64,6 @@ jobs:
         rust:
           - stable
           - beta
-          - nightly
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
