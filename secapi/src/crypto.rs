@@ -171,6 +171,24 @@ impl<'a> Drop for MacContext<'a> {
     }
 }
 
+/// Fill a slice with random bytes
+///
+/// # Arguments
+///
+/// * `bytes` - A mutable slice of bytes to fill with random data
+///
+/// # Example
+///
+/// ```
+/// use secapi::crypto;
+///
+/// # fn main() -> Result<(), secapi::ErrorStatus> {
+/// let mut bytes = [0u8; 10];
+/// crypto::fill_random_bytes(&mut bytes)?;
+///
+/// # Ok(())
+/// # }
+/// ```
 pub fn fill_random_bytes(bytes: &mut [u8]) -> Result<(), ErrorStatus> {
     convert_result(unsafe {
         ffi::sa_crypto_random(bytes.as_mut_ptr() as *mut c_void, bytes.len())
@@ -179,7 +197,49 @@ pub fn fill_random_bytes(bytes: &mut [u8]) -> Result<(), ErrorStatus> {
     Ok(())
 }
 
-pub fn random_bytes(len: usize) -> Result<Vec<u8>, ErrorStatus> {
+/// Generate a fixed length array of random bytes
+///
+/// # Example
+///
+/// ```
+/// use secapi::crypto;
+///
+/// # fn main() -> Result<(), secapi::ErrorStatus> {
+///
+/// // Using explicit type annotation
+/// let bytes1: [u8; 128] = crypto::random_bytes()?;
+///
+/// // Using turbofish syntax
+/// let bytes2 = crypto::random_bytes::<128>()?;
+///
+/// # Ok(())
+/// # }
+pub fn random_bytes<const N: usize>() -> Result<[u8; N], ErrorStatus> {
+    let mut bytes = [0u8; N];
+
+    convert_result(unsafe {
+        ffi::sa_crypto_random(bytes.as_mut_ptr() as *mut c_void, bytes.len())
+    })?;
+
+    Ok(bytes)
+}
+
+/// Generate a vector of random bytes
+///
+/// # Arguments
+///
+/// * `len` - The length of the vector to generate
+///
+/// # Example
+///
+/// ```
+/// use secapi::crypto;
+///
+/// # fn main() -> Result<(), secapi::ErrorStatus> {
+/// let bytes = crypto::random_bytes_vec(256)?;
+/// # Ok(())
+/// # }
+pub fn random_bytes_vec(len: usize) -> Result<Vec<u8>, ErrorStatus> {
     let mut bytes = vec![0u8; len];
 
     convert_result(unsafe {
@@ -210,13 +270,13 @@ mod test {
 
     #[test]
     fn test_random_bytes() -> Result<(), ErrorStatus> {
-        let _ = crypto::random_bytes(128);
+        let _ = crypto::random_bytes::<128>();
         Ok(())
     }
 
     #[test]
     fn test_random_bytes_zero_len() -> Result<(), ErrorStatus> {
-        let random_result = crypto::random_bytes(0);
+        let random_result = crypto::random_bytes::<0>();
         assert_eq!(random_result, Err(ErrorStatus::NullParameter));
         Ok(())
     }

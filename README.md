@@ -226,20 +226,20 @@ assert_eq!(header.size, 128);
 
 ### sa_crypto.h
 
-| Function                        | Implemented | Unit Tested | Rust Counterpart                                             |
-| ------------------------------- | ----------- | ----------- | ------------------------------------------------------------ |
-| `sa_crypto_random`              | ✅          | ✅          | `crypto::fill_random_bytes`, `crypto::random_bytes`          |
-| `sa_crypto_cipher_init`         | ❌          | ❌          | N/A                                                          |
-| `sa_crypto_cipher_update_iv`    | ❌          | ❌          | N/A                                                          |
-| `sa_crypto_cipher_process`      | ❌          | ❌          | N/A                                                          |
-| `sa_crypto_cipher_process_last` | ❌          | ❌          | N/A                                                          |
-| `sa_crypto_cipher_release`      | ❌          | ❌          | N/A                                                          |
-| `sa_crypto_mac_init`            | ✅          | ❌          | `crypto::MacContext::init`                                   |
-| `sa_crypto_mac_process`         | ✅          | ❌          | `crypto::MacContext::process_bytes`                          |
-| `sa_crypto_mac_process_key`     | ✅          | ❌          | `crypto::MacContext::process_key`                            |
-| `sa_crypto_mac_compute`         | ✅          | ❌          | `crypto::MacContext::compute`                                |
-| `sa_crypto_mac_release`         | ✅          | ❌          | Handle automatically as a part of `crypto::MacContext::Drop` |
-| `sa_crypto_sign`                | ✅          | ❌          | `key::Key::sign`                                             |
+| Function                        | Implemented | Unit Tested | Rust Counterpart                                                                |
+| ------------------------------- | ----------- | ----------- | ------------------------------------------------------------------------------- |
+| `sa_crypto_random`              | ✅          | ✅          | `crypto::fill_random_bytes`, `crypto::random_bytes`, `crypto::random_bytes_vec` |
+| `sa_crypto_cipher_init`         | ❌          | ❌          | N/A                                                                             |
+| `sa_crypto_cipher_update_iv`    | ❌          | ❌          | N/A                                                                             |
+| `sa_crypto_cipher_process`      | ❌          | ❌          | N/A                                                                             |
+| `sa_crypto_cipher_process_last` | ❌          | ❌          | N/A                                                                             |
+| `sa_crypto_cipher_release`      | ❌          | ❌          | N/A                                                                             |
+| `sa_crypto_mac_init`            | ✅          | ❌          | `crypto::MacContext::init`                                                      |
+| `sa_crypto_mac_process`         | ✅          | ❌          | `crypto::MacContext::process_bytes`                                             |
+| `sa_crypto_mac_process_key`     | ✅          | ❌          | `crypto::MacContext::process_key`                                               |
+| `sa_crypto_mac_compute`         | ✅          | ❌          | `crypto::MacContext::compute`                                                   |
+| `sa_crypto_mac_release`         | ✅          | ❌          | Handle automatically as a part of `crypto::MacContext::Drop`                    |
+| `sa_crypto_sign`                | ✅          | ❌          | `key::Key::sign`                                                                |
 
 ### sa_key.h
 
