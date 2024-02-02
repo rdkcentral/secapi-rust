@@ -3,6 +3,7 @@
 - Switch `random_bytes` to use const generics
 - Use `.expect()` calls when unwrapping min and max `NaiveDateTime` and
   `NaiveDate`.
+- Switch the return type of `device_id()` from `u64` to `[u8; 8]`
 
 # v0.1.0 (2023-11-22)
 
