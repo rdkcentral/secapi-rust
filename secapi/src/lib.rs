@@ -512,6 +512,12 @@ pub fn name() -> Result<String, ErrorStatus> {
     .map_err(|_| ErrorStatus::InvalidParameter)
 }
 
+/// Device ID
+///
+/// The device id is represented by eight bytes in big endian format. The underlying device
+/// architecture does not matter and device id will always be in big endian format.
+pub type DeviceId = [u8; 8];
+
 /// Obtain the device ID
 ///
 /// ID will be formatted according to the "SoC Identifier Specification"
@@ -525,17 +531,20 @@ pub fn name() -> Result<String, ErrorStatus> {
 /// // Get the device id
 /// let soc_id = device_id()?;
 ///
-/// println!("{:?}", soc_id.to_be_bytes());
+/// println!("{:?}", soc_id);
 ///
 /// # Ok(())
 /// # }
 /// ```
-pub fn device_id() -> Result<u64, ErrorStatus> {
+pub fn device_id() -> Result<DeviceId, ErrorStatus> {
     let mut device_id = 0;
 
     convert_result(unsafe { ffi::sa_get_device_id(&mut device_id) })?;
 
-    Ok(device_id)
+    // The API will always return the device id in big endian format. Calling .to_ne_bytes()
+    // therefore is correct since the underlying device architecture does not matter and u64 is just
+    // being used to store 8-bytes.
+    Ok(device_id.to_ne_bytes())
 }
 
 /// Obtain the UUID of the TA making this call
@@ -591,10 +600,7 @@ mod test {
     fn test_device_id() -> Result<(), ErrorStatus> {
         let device_id = device_id()?;
 
-        assert_eq!(
-            device_id.to_be_bytes(),
-            [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe]
-        );
+        assert_eq!(device_id, [0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
 
         Ok(())
     }
