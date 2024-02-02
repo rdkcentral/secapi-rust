@@ -258,6 +258,11 @@ pub struct Rights {
 }
 
 impl Rights {
+    const ALLOW_ALL_TAS: [Uuid; ffi::MAX_NUM_ALLOWED_TA_IDS] = [Uuid::from_bytes([
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff,
+    ]); ffi::MAX_NUM_ALLOWED_TA_IDS];
+
     pub fn allow_all() -> Self {
         Self {
             id: [0; 64],
@@ -270,16 +275,14 @@ impl Rights {
                 | UsageFlags::ALL_OUTPUT_PROTECTIONS
                 | UsageFlags::CACHEABLE,
             child_usage_flags: UsageFlags::empty(),
-            not_before: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
-            // The max possible date: (December 31, 262143 CE)
-            not_on_or_after: NaiveDate::from_ymd_opt(262143, 12, 31)
-                .unwrap()
+            not_before: NaiveDateTime::from_timestamp_opt(0, 0)
+                .expect("Could not represent NativeDateTime"),
+            // The max possible date: (December 31, 262142 CE)
+            not_on_or_after: NaiveDate::from_ymd_opt(262142, 12, 31)
+                .expect("Could not represent NaiveDate")
                 .and_hms_opt(0, 0, 0)
-                .unwrap(),
-            allowed_tas: [Uuid::from_bytes([
-                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                0xff, 0xff,
-            ]); ffi::MAX_NUM_ALLOWED_TA_IDS],
+                .expect("Could not represent NativeDateTime"),
+            allowed_tas: Self::ALLOW_ALL_TAS,
         }
     }
 }
