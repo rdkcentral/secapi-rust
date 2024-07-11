@@ -18,7 +18,7 @@
 use std::{error::Error, fmt::Display, ptr::null_mut};
 
 use bitflags::bitflags;
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{DateTime, NaiveDate, Utc};
 use libc::{c_char, c_void, size_t};
 use secapi_sys as ffi;
 use uuid::Uuid;
@@ -244,9 +244,9 @@ pub struct Rights {
     /// Usage flags bitfield for unwrapped child keys.
     child_usage_flags: UsageFlags,
     /// Start of the key validity period
-    not_before: NaiveDateTime,
+    not_before: DateTime<Utc>,
     /// End of the key validity period
-    not_on_or_after: NaiveDateTime,
+    not_on_or_after: DateTime<Utc>,
     /// List of TAs that are allowed to wield this key. All entries in the array
     /// are compared to the calling TA's UUID. If any of them match key is
     /// allowed to be used by the TA.
@@ -275,13 +275,13 @@ impl Rights {
                 | UsageFlags::ALL_OUTPUT_PROTECTIONS
                 | UsageFlags::CACHEABLE,
             child_usage_flags: UsageFlags::empty(),
-            not_before: NaiveDateTime::from_timestamp_opt(0, 0)
-                .expect("Could not represent NativeDateTime"),
+            not_before: DateTime::from_timestamp(0, 0).expect("Could not represent DateTime"),
             // The max possible date: (December 31, 262142 CE)
             not_on_or_after: NaiveDate::from_ymd_opt(262142, 12, 31)
                 .expect("Could not represent NaiveDate")
                 .and_hms_opt(0, 0, 0)
-                .expect("Could not represent NativeDateTime"),
+                .expect("Could not represent NaiveDateTime")
+                .and_utc(),
             allowed_tas: Self::ALLOW_ALL_TAS,
         }
     }
@@ -302,9 +302,8 @@ impl From<ffi::SaRights> for Rights {
             id: value.id,
             usage_flags: UsageFlags::from_bits_truncate(value.usage_flags),
             child_usage_flags: UsageFlags::from_bits_truncate(value.child_usage_flags),
-            not_before: NaiveDateTime::from_timestamp_opt(value.not_before as i64, 0).unwrap(),
-            not_on_or_after: NaiveDateTime::from_timestamp_opt(value.not_on_or_after as i64, 0)
-                .unwrap(),
+            not_before: DateTime::from_timestamp(value.not_before as i64, 0).unwrap(),
+            not_on_or_after: DateTime::from_timestamp(value.not_on_or_after as i64, 0).unwrap(),
             allowed_tas,
         }
     }
@@ -325,9 +324,8 @@ impl From<&ffi::SaRights> for Rights {
             id: value.id,
             usage_flags: UsageFlags::from_bits_truncate(value.usage_flags),
             child_usage_flags: UsageFlags::from_bits_truncate(value.child_usage_flags),
-            not_before: NaiveDateTime::from_timestamp_opt(value.not_before as i64, 0).unwrap(),
-            not_on_or_after: NaiveDateTime::from_timestamp_opt(value.not_on_or_after as i64, 0)
-                .unwrap(),
+            not_before: DateTime::from_timestamp(value.not_before as i64, 0).unwrap(),
+            not_on_or_after: DateTime::from_timestamp(value.not_on_or_after as i64, 0).unwrap(),
             allowed_tas,
         }
     }
@@ -580,7 +578,7 @@ mod test {
         let secapi_version = version()?;
 
         assert_eq!(secapi_version.specification_major, 3);
-        assert_eq!(secapi_version.specification_minor, 3);
+        assert_eq!(secapi_version.specification_minor, 4);
         assert_eq!(secapi_version.specification_revision, 0);
         assert_eq!(secapi_version.implementation_revision, 0);
 
