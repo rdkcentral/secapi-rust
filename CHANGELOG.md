@@ -4,6 +4,8 @@
 - Use `.expect()` calls when unwrapping min and max `NaiveDateTime` and
   `NaiveDate`.
 - Switch the return type of `device_id()` from `u64` to `[u8; 8]`
+- Remove use of deprecated NaiveDateTime APIs in favor of DateTime<Utc>
+- Update to tasecureapi 3.4.0
 
 # v0.1.0 (2023-11-22)
 
