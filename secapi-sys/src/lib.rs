@@ -956,15 +956,15 @@ pub struct SaKdfParametersNetflix {
 #[repr(C)]
 pub struct SaKeyExchangeParametersNetflixAuthenticatedDh {
     /// Input wrapping key.
-    in_kw: SaKey,
+    pub in_kw: SaKey,
     /// Derived encryption key.
-    out_ke: *mut SaKey,
+    pub out_ke: *mut SaKey,
     /// Derived encryption key rights.
-    rights_ke: *mut SaRights,
+    pub rights_ke: *mut SaRights,
     /// Derived HMAC key.
-    out_kh: *mut SaKey,
+    pub out_kh: *mut SaKey,
     /// Derived HMAC key rights.
-    rights_kh: *mut SaRights,
+    pub rights_kh: *mut SaRights,
 }
 
 /// Structure to use in sa_svp_buffer_copy_blocks
