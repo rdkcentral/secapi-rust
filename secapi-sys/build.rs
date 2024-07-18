@@ -81,6 +81,10 @@ fn main() {
     // Note: The order is extremely important here. libsaclient.so must be linked before
     // libstdc++.so and libc.so. The linker will complain about unresolved symbols in libsaclient.so
     // if the two libraries are linked before.
-    println!("cargo:rustc-link-lib=dylib=stdc++");
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-lib=dylib=c++");
+    } else {
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+    }
     println!("cargo:rustc-link-lib=dylib=c");
 }
