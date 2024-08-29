@@ -1,4 +1,4 @@
-# Unreleased
+# v0.2.0 (2024-08-29)
 
 - Switch `random_bytes` to use const generics
 - Use `.expect()` calls when unwrapping min and max `NaiveDateTime` and
