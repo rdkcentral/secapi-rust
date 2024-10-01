@@ -554,10 +554,12 @@ pub struct SaImportParamtersTypeJ {
     pub khmac: SaKey,
 }
 
-/// Import parameters for a SoC key container. This structure is used to signal the SecApi
-/// compatability version of the key container and to identify the object_id in the key rights. This
-/// structure can be extended in a SoC specific way with additional fields at the end, however the
-/// length field must include the sizeof the extended structure.
+/// Import parameters for a SoC key container.
+///
+/// This structure is used to signal the SecApi compatability version of the key container and to
+/// identify the object_id in the key rights. This structure can be extended in a SoC specific way
+/// with additional fields at the end, however the length field must include the sizeof the
+/// extended structure.
 #[derive(Debug)]
 #[repr(C)]
 pub struct SaImportParametersSoc {
