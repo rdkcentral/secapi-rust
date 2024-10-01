@@ -1,6 +1,6 @@
 [package]
 name = "secapi-sys"
-version = "0.1.0"
+version.workspace = true
 authors = [
     "Stefan Bossbaly <Stefan_Bossbaly@comcast.com>",
 ]
