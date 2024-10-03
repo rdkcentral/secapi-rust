@@ -8,8 +8,9 @@ description = "FFI bindings to SecAPI"
 keywords = ["secure", "storage", "secapi"]
 categories = ["cryptography", "external-ffi-bindings"]
 repository = "https://github.com/rdkcentral/secapi-rust"
-readme = "README.md"
-edition = "2021"
+license.workspace = true
+readme.workspace = true
+edition.workspace = true
 build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
