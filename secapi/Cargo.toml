@@ -8,8 +8,9 @@ description = "SecAPI bindings"
 keywords = ["crypto", "secure", "secapi"]
 categories = ["cryptography", "api-bindings"]
 repository = "https://github.com/rdkcentral/secapi-rust"
-readme = "README.md"
-edition = "2021"
+license.workspace = true
+readme.workspace = true
+edition.workspace = true
 
 [lib]
 doctest = false
