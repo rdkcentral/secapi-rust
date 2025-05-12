@@ -158,7 +158,7 @@ impl<'a> MacContext<'a> {
     }
 }
 
-impl<'a> Drop for MacContext<'a> {
+impl Drop for MacContext<'_> {
     fn drop(&mut self) {
         let Self { context_handle, .. } = self;
 

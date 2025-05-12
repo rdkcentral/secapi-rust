@@ -188,7 +188,7 @@ impl<'a> SvpBuffer<'a> {
     }
 }
 
-impl<'a> Drop for SvpBuffer<'a> {
+impl Drop for SvpBuffer<'_> {
     fn drop(&mut self) {
         let Self {
             underlying_svp_memory,

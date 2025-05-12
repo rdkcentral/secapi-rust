@@ -950,7 +950,7 @@ impl<'a> From<&KeyDeriveParameters<'a>> for ffi::SaKdfAlgorithm {
     }
 }
 
-impl<'a> KeyDeriveParameters<'a> {
+impl KeyDeriveParameters<'_> {
     fn into_ffi_parameters(self) -> KeyKdfFfiParameters {
         match self {
             KeyDeriveParameters::RootKeyLadder { c1, c2, c3, c4 } => {
@@ -1311,7 +1311,7 @@ impl From<&KeySignParameters> for ffi::SaSignatureAlgorithm {
             KeySignParameters::RsaPss { .. } => Self::RSA_PSS,
             KeySignParameters::RsaPkcs1v15 { .. } => Self::RSA_PKCS1V15,
             KeySignParameters::Ecdsa { .. } => Self::ECDSA,
-            KeySignParameters::Eddsa { .. } => Self::EDDSA,
+            KeySignParameters::Eddsa => Self::EDDSA,
         }
     }
 }
