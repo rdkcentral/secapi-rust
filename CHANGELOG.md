@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.2.2 (2025-05-13)
+
+- Updated tasecureapi version
+
 ## v0.2.0 (2024-08-30)
 
 - Switch `random_bytes` to use const generics
