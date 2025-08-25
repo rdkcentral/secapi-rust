@@ -30,20 +30,21 @@ pub enum MacAlgorithm {
     HMac,
 }
 
-impl From<MacAlgorithm> for ffi::SaMacAlgorithm {
+impl From<MacAlgorithm> for ffi::sa_mac_algorithm {
     fn from(value: MacAlgorithm) -> Self {
         match value {
-            MacAlgorithm::CMac => Self::CMAC,
-            MacAlgorithm::HMac => Self::HMAC,
+            MacAlgorithm::CMac => ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_CMAC,
+            MacAlgorithm::HMac => ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_HMAC,
         }
     }
 }
 
-impl From<ffi::SaMacAlgorithm> for MacAlgorithm {
-    fn from(value: ffi::SaMacAlgorithm) -> Self {
+impl From<ffi::sa_mac_algorithm> for MacAlgorithm {
+    fn from(value: ffi::sa_mac_algorithm) -> Self {
         match value {
-            ffi::SaMacAlgorithm::CMAC => Self::CMac,
-            ffi::SaMacAlgorithm::HMAC => Self::HMac,
+            ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_CMAC => Self::CMac,
+            ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_HMAC => Self::HMac,
+            _ => panic!("invalid sa_mac_algorithm: {value:?}"),
         }
     }
 }
@@ -53,11 +54,11 @@ pub enum MacInitParameters {
     HMac { digest_algorithm: DigestAlgorithm },
 }
 
-impl From<&MacInitParameters> for ffi::SaMacAlgorithm {
+impl From<&MacInitParameters> for ffi::sa_mac_algorithm {
     fn from(value: &MacInitParameters) -> Self {
         match value {
-            MacInitParameters::CMac => Self::CMAC,
-            MacInitParameters::HMac { .. } => Self::HMAC,
+            MacInitParameters::CMac => Self::SA_MAC_ALGORITHM_CMAC,
+            MacInitParameters::HMac { .. } => Self::SA_MAC_ALGORITHM_HMAC,
         }
     }
 }
@@ -67,7 +68,7 @@ impl MacInitParameters {
         match self {
             Self::CMac => MacInitFfiParameters::CMac,
             Self::HMac { digest_algorithm } => MacInitFfiParameters::HMac {
-                params: ffi::SaMacParametersHmac {
+                params: ffi::sa_mac_parameters_hmac {
                     digest_algorithm: digest_algorithm.into(),
                 },
             },
@@ -77,7 +78,7 @@ impl MacInitParameters {
 
 enum MacInitFfiParameters {
     CMac,
-    HMac { params: ffi::SaMacParametersHmac },
+    HMac { params: ffi::sa_mac_parameters_hmac },
 }
 
 impl FfiParameters for MacInitFfiParameters {
@@ -90,13 +91,13 @@ impl FfiParameters for MacInitFfiParameters {
 }
 
 pub struct MacContext<'a> {
-    pub(crate) context_handle: ffi::SaCryptoMacContext,
+    pub(crate) context_handle: ffi::sa_crypto_mac_context,
     _key: &'a Key,
 }
 
 impl<'a> MacContext<'a> {
     pub fn init(mac_params: MacInitParameters, key: &'a Key) -> Result<Self, ErrorStatus> {
-        let mut context_handle: ffi::SaCryptoMacContext = ffi::INVALID_HANDLE;
+        let mut context_handle: ffi::sa_crypto_mac_context = ffi::INVALID_HANDLE;
 
         let mac_algorithm = (&mac_params).into();
         let mut ffi_params = mac_params.into_ffi_parameters();

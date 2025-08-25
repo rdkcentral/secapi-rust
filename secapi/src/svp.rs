@@ -70,7 +70,7 @@ pub struct SvpOffset {
     pub length: usize,
 }
 
-impl From<SvpOffset> for ffi::SaSvpOffset {
+impl From<SvpOffset> for ffi::sa_svp_offset {
     fn from(value: SvpOffset) -> Self {
         Self {
             out_offset: value.out_offset,
@@ -82,12 +82,12 @@ impl From<SvpOffset> for ffi::SaSvpOffset {
 
 pub struct SvpBuffer<'a> {
     underlying_svp_memory: Option<&'a SvpMemory>,
-    buffer_handle: ffi::SaSvpBuffer,
+    buffer_handle: ffi::sa_svp_buffer,
 }
 
 impl<'a> SvpBuffer<'a> {
     pub fn allocate(size: usize) -> Result<Self, ErrorStatus> {
-        let mut buffer_handle: ffi::SaSvpBuffer = ffi::INVALID_HANDLE;
+        let mut buffer_handle: ffi::sa_svp_buffer = ffi::INVALID_HANDLE;
 
         convert_result(unsafe {
             ffi::sa_svp_buffer_alloc(&mut buffer_handle as *mut _, size as size_t)
@@ -100,7 +100,7 @@ impl<'a> SvpBuffer<'a> {
     }
 
     pub fn with_underlying_memory(memory: &'a SvpMemory) -> Result<Self, ErrorStatus> {
-        let mut buffer_handle: ffi::SaSvpBuffer = ffi::INVALID_HANDLE;
+        let mut buffer_handle: ffi::sa_svp_buffer = ffi::INVALID_HANDLE;
 
         convert_result(unsafe {
             ffi::sa_svp_buffer_create(
@@ -124,7 +124,7 @@ impl<'a> SvpBuffer<'a> {
         let mut ffi_offsets = offsets
             .into_iter()
             .map(|offset| offset.into())
-            .collect::<Vec<ffi::SaSvpOffset>>();
+            .collect::<Vec<ffi::sa_svp_offset>>();
 
         convert_result(unsafe {
             ffi::sa_svp_buffer_write(
@@ -143,7 +143,7 @@ impl<'a> SvpBuffer<'a> {
         let mut ffi_offsets = offsets
             .into_iter()
             .map(|offset| offset.into())
-            .collect::<Vec<ffi::SaSvpOffset>>();
+            .collect::<Vec<ffi::sa_svp_offset>>();
 
         convert_result(unsafe {
             ffi::sa_svp_buffer_copy(

@@ -35,24 +35,25 @@ pub enum KeyType {
     DiffieHellman,
 }
 
-impl From<KeyType> for ffi::SaKeyType {
+impl From<KeyType> for ffi::sa_key_type {
     fn from(value: KeyType) -> Self {
         match value {
-            KeyType::Symmetric => Self::SYMMETRIC,
-            KeyType::EllipticCurve => Self::EC,
-            KeyType::Rsa => Self::RSA,
-            KeyType::DiffieHellman => Self::DH,
+            KeyType::Symmetric => Self::SA_KEY_TYPE_SYMMETRIC,
+            KeyType::EllipticCurve => Self::SA_KEY_TYPE_EC,
+            KeyType::Rsa => Self::SA_KEY_TYPE_RSA,
+            KeyType::DiffieHellman => Self::SA_KEY_TYPE_DH,
         }
     }
 }
 
-impl From<ffi::SaKeyType> for KeyType {
-    fn from(value: ffi::SaKeyType) -> Self {
+impl From<ffi::sa_key_type> for KeyType {
+    fn from(value: ffi::sa_key_type) -> Self {
         match value {
-            ffi::SaKeyType::SYMMETRIC => Self::Symmetric,
-            ffi::SaKeyType::EC => Self::EllipticCurve,
-            ffi::SaKeyType::RSA => Self::Rsa,
-            ffi::SaKeyType::DH => Self::DiffieHellman,
+            ffi::sa_key_type::SA_KEY_TYPE_SYMMETRIC => Self::Symmetric,
+            ffi::sa_key_type::SA_KEY_TYPE_EC => Self::EllipticCurve,
+            ffi::sa_key_type::SA_KEY_TYPE_RSA => Self::Rsa,
+            ffi::sa_key_type::SA_KEY_TYPE_DH => Self::DiffieHellman,
+            _ => panic!("invalid sa_key_type: {value:?}"),
         }
     }
 }
@@ -91,30 +92,33 @@ pub enum KdfAlgorithm {
     CommonRootKeyLadder,
 }
 
-impl From<KdfAlgorithm> for ffi::SaKdfAlgorithm {
+impl From<KdfAlgorithm> for ffi::sa_kdf_algorithm {
     fn from(value: KdfAlgorithm) -> Self {
         match value {
-            KdfAlgorithm::RootKeyLadder => Self::ROOT_KEY_LADDER,
-            KdfAlgorithm::Hkdf => Self::HKDF,
-            KdfAlgorithm::Concat => Self::CONCAT,
-            KdfAlgorithm::AnsiX963 => Self::ANSI_X963,
-            KdfAlgorithm::Cmac => Self::CMAC,
-            KdfAlgorithm::Netflix => Self::NETFLIX,
-            KdfAlgorithm::CommonRootKeyLadder => Self::COMMON_ROOT_KEY_LADDER,
+            KdfAlgorithm::RootKeyLadder => Self::SA_KDF_ALGORITHM_ROOT_KEY_LADDER,
+            KdfAlgorithm::Hkdf => Self::SA_KDF_ALGORITHM_HKDF,
+            KdfAlgorithm::Concat => Self::SA_KDF_ALGORITHM_CONCAT,
+            KdfAlgorithm::AnsiX963 => Self::SA_KDF_ALGORITHM_ANSI_X963,
+            KdfAlgorithm::Cmac => Self::SA_KDF_ALGORITHM_CMAC,
+            KdfAlgorithm::Netflix => Self::SA_KDF_ALGORITHM_NETFLIX,
+            KdfAlgorithm::CommonRootKeyLadder => Self::SA_KDF_ALGORITHM_COMMON_ROOT_KEY_LADDER,
         }
     }
 }
 
-impl From<ffi::SaKdfAlgorithm> for KdfAlgorithm {
-    fn from(value: ffi::SaKdfAlgorithm) -> Self {
+impl From<ffi::sa_kdf_algorithm> for KdfAlgorithm {
+    fn from(value: ffi::sa_kdf_algorithm) -> Self {
         match value {
-            ffi::SaKdfAlgorithm::ROOT_KEY_LADDER => Self::RootKeyLadder,
-            ffi::SaKdfAlgorithm::HKDF => Self::Hkdf,
-            ffi::SaKdfAlgorithm::CONCAT => Self::Concat,
-            ffi::SaKdfAlgorithm::ANSI_X963 => Self::AnsiX963,
-            ffi::SaKdfAlgorithm::CMAC => Self::Cmac,
-            ffi::SaKdfAlgorithm::NETFLIX => Self::Netflix,
-            ffi::SaKdfAlgorithm::COMMON_ROOT_KEY_LADDER => Self::CommonRootKeyLadder,
+            ffi::sa_kdf_algorithm::SA_KDF_ALGORITHM_ROOT_KEY_LADDER => Self::RootKeyLadder,
+            ffi::sa_kdf_algorithm::SA_KDF_ALGORITHM_HKDF => Self::Hkdf,
+            ffi::sa_kdf_algorithm::SA_KDF_ALGORITHM_CONCAT => Self::Concat,
+            ffi::sa_kdf_algorithm::SA_KDF_ALGORITHM_ANSI_X963 => Self::AnsiX963,
+            ffi::sa_kdf_algorithm::SA_KDF_ALGORITHM_CMAC => Self::Cmac,
+            ffi::sa_kdf_algorithm::SA_KDF_ALGORITHM_NETFLIX => Self::Netflix,
+            ffi::sa_kdf_algorithm::SA_KDF_ALGORITHM_COMMON_ROOT_KEY_LADDER => {
+                Self::CommonRootKeyLadder
+            }
+            _ => panic!("invalid sa_kdf_algorithm: {value:?}"),
         }
     }
 }
@@ -126,7 +130,7 @@ enum KeyImportFfiParameters {
     Symmetric {
         /// The FFI parameters that will be passed into the C API for the import
         /// value SA_KEY_FORMAT_SYMMETRIC_BYTES
-        params: ffi::SaImportParametersSymmetric,
+        params: ffi::sa_import_parameters_symmetric,
 
         /// Key rights to associate with imported key
         ///
@@ -136,13 +140,13 @@ enum KeyImportFfiParameters {
         ///
         /// [`params`]: KeyImportFfiParameters::Symmetric::params
         #[allow(dead_code)]
-        rights: Box<ffi::SaRights>,
+        rights: Box<ffi::sa_rights>,
     },
     /// FFI Parameters for SA_KEY_FORMAT_EC_PRIVATE_BYTES
     EcPrivateBytes {
         /// The FFI parameters that will be passed into the C API for the import
         /// value SA_KEY_FORMAT_EC_PRIVATE_BYTES
-        params: ffi::SaImportParametersEcPrivateBytes,
+        params: ffi::sa_import_parameters_ec_private_bytes,
 
         /// Key rights to associate with imported key
         ///
@@ -152,13 +156,13 @@ enum KeyImportFfiParameters {
         ///
         /// [`params`]: KeyImportFfiParameters::EcPrivateBytes::params
         #[allow(dead_code)]
-        rights: Box<ffi::SaRights>,
+        rights: Box<ffi::sa_rights>,
     },
     /// FFI Parameters for SA_KEY_FORMAT_RSA_PRIVATE_KEY_INFO
     RsaPrivateKeyInfo {
         /// The FFI parameters that will be passed into the C API for the import
         /// value SA_KEY_FORMAT_RSA_PRIVATE_KEY_INFO
-        params: ffi::SaImportParametersRsaPrivateKeyInfo,
+        params: ffi::sa_import_parameters_rsa_private_key_info,
 
         /// Key rights to associate with imported key
         ///
@@ -168,7 +172,7 @@ enum KeyImportFfiParameters {
         ///
         /// [`params`]: KeyImportFfiParameters::RsaPrivateKeyInfo::params
         #[allow(dead_code)]
-        rights: Box<ffi::SaRights>,
+        rights: Box<ffi::sa_rights>,
     },
     /// FFI Parameters for SA_KEY_FORMAT_EXPORTED
     Exported,
@@ -178,7 +182,7 @@ enum KeyImportFfiParameters {
     TypeJ {
         /// The FFI parameters that will be passed into the C API for the import
         /// value SA_KEY_FORMAT_TYPEJ
-        params: ffi::SaImportParamtersTypeJ,
+        params: ffi::sa_import_parameters_typej,
     },
 }
 
@@ -232,20 +236,20 @@ impl KeyImportFormat {
     fn into_ffi_parameters(self) -> KeyImportFfiParameters {
         match self {
             Self::SymmetricBytes { rights } => {
-                let sa_rights: Box<ffi::SaRights> = Box::new(rights.into());
+                let sa_rights: Box<ffi::sa_rights> = Box::new(rights.into());
 
                 KeyImportFfiParameters::Symmetric {
-                    params: ffi::SaImportParametersSymmetric {
+                    params: ffi::sa_import_parameters_symmetric {
                         rights: &*sa_rights,
                     },
                     rights: sa_rights,
                 }
             }
             Self::EcPrivateBytes { rights, curve } => {
-                let sa_rights: Box<ffi::SaRights> = Box::new(rights.into());
+                let sa_rights: Box<ffi::sa_rights> = Box::new(rights.into());
 
                 KeyImportFfiParameters::EcPrivateBytes {
-                    params: ffi::SaImportParametersEcPrivateBytes {
+                    params: ffi::sa_import_parameters_ec_private_bytes {
                         curve: curve.into(),
                         rights: &*sa_rights,
                     },
@@ -253,10 +257,10 @@ impl KeyImportFormat {
                 }
             }
             Self::RsaPrivateKeyInfo { rights } => {
-                let sa_rights: Box<ffi::SaRights> = Box::new(rights.into());
+                let sa_rights: Box<ffi::sa_rights> = Box::new(rights.into());
 
                 KeyImportFfiParameters::RsaPrivateKeyInfo {
-                    params: ffi::SaImportParametersRsaPrivateKeyInfo {
+                    params: ffi::sa_import_parameters_rsa_private_key_info {
                         rights: &*sa_rights,
                     },
                     rights: sa_rights,
@@ -265,7 +269,7 @@ impl KeyImportFormat {
             Self::Exported => KeyImportFfiParameters::Exported,
             Self::SoC => KeyImportFfiParameters::SoC,
             Self::TypeJ { kcipher, khmac } => KeyImportFfiParameters::TypeJ {
-                params: ffi::SaImportParamtersTypeJ {
+                params: ffi::sa_import_parameters_typej {
                     kcipher: kcipher.key_handle,
                     khmac: khmac.key_handle,
                 },
@@ -274,15 +278,15 @@ impl KeyImportFormat {
     }
 }
 
-impl From<&KeyImportFormat> for ffi::SaKeyFormat {
+impl From<&KeyImportFormat> for ffi::sa_key_format {
     fn from(val: &KeyImportFormat) -> Self {
         match val {
-            KeyImportFormat::SymmetricBytes { .. } => Self::SYMMETRIC_BYTES,
-            KeyImportFormat::EcPrivateBytes { .. } => Self::EC_PRIVATE_BYTES,
-            KeyImportFormat::RsaPrivateKeyInfo { .. } => Self::RSA_PRIVATE_KEY_INFO,
-            KeyImportFormat::Exported => Self::EXPORTED,
-            KeyImportFormat::SoC => Self::SOC,
-            KeyImportFormat::TypeJ { .. } => Self::TYPEJ,
+            KeyImportFormat::SymmetricBytes { .. } => Self::SA_KEY_FORMAT_SYMMETRIC_BYTES,
+            KeyImportFormat::EcPrivateBytes { .. } => Self::SA_KEY_FORMAT_EC_PRIVATE_BYTES,
+            KeyImportFormat::RsaPrivateKeyInfo { .. } => Self::SA_KEY_FORMAT_RSA_PRIVATE_KEY_INFO,
+            KeyImportFormat::Exported => Self::SA_KEY_FORMAT_EXPORTED,
+            KeyImportFormat::SoC => Self::SA_KEY_FORMAT_SOC,
+            KeyImportFormat::TypeJ { .. } => Self::SA_KEY_FORMAT_TYPEJ,
         }
     }
 }
@@ -308,7 +312,7 @@ impl KeyUnwrapTypeParameters {
         match self {
             Self::Symmetric => KeyUnwrapTypeFfiParameters::Symmetric,
             Self::EllipticCurve { curve } => KeyUnwrapTypeFfiParameters::EllipticCurve {
-                params: ffi::SaUnwrapTypeParametersEc {
+                params: ffi::sa_unwrap_type_parameters_ec {
                     curve: curve.into(),
                 },
             },
@@ -318,13 +322,13 @@ impl KeyUnwrapTypeParameters {
     }
 }
 
-impl From<&KeyUnwrapTypeParameters> for ffi::SaKeyType {
+impl From<&KeyUnwrapTypeParameters> for ffi::sa_key_type {
     fn from(value: &KeyUnwrapTypeParameters) -> Self {
         match value {
-            KeyUnwrapTypeParameters::Symmetric => Self::SYMMETRIC,
-            KeyUnwrapTypeParameters::EllipticCurve { .. } => Self::EC,
-            KeyUnwrapTypeParameters::Rsa => Self::RSA,
-            KeyUnwrapTypeParameters::DiffieHellman => Self::DH,
+            KeyUnwrapTypeParameters::Symmetric => Self::SA_KEY_TYPE_SYMMETRIC,
+            KeyUnwrapTypeParameters::EllipticCurve { .. } => Self::SA_KEY_TYPE_EC,
+            KeyUnwrapTypeParameters::Rsa => Self::SA_KEY_TYPE_RSA,
+            KeyUnwrapTypeParameters::DiffieHellman => Self::SA_KEY_TYPE_DH,
         }
     }
 }
@@ -333,7 +337,7 @@ impl From<&KeyUnwrapTypeParameters> for ffi::SaKeyType {
 enum KeyUnwrapTypeFfiParameters {
     Symmetric,
     EllipticCurve {
-        params: ffi::SaUnwrapTypeParametersEc,
+        params: ffi::sa_unwrap_type_parameters_ec,
     },
     Rsa,
     DiffieHellman,
@@ -413,7 +417,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 let iv_box = Box::new(iv);
 
                 KeyUnwrapAlgorithmFfiParameters::AesCbc {
-                    params: ffi::SaUnwrapParametersAesCbc {
+                    params: ffi::sa_unwrap_parameters_aes_cbc {
                         iv: iv_box.as_ptr() as *const c_void,
                         iv_length: iv_len as size_t,
                     },
@@ -425,7 +429,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 let iv_box = Box::new(iv);
 
                 KeyUnwrapAlgorithmFfiParameters::AesCbcPkcs7 {
-                    params: ffi::SaUnwrapParametersAesCbc {
+                    params: ffi::sa_unwrap_parameters_aes_cbc {
                         iv: iv_box.as_ptr() as *const _,
                         iv_length: iv_len as size_t,
                     },
@@ -437,7 +441,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 let ctr_box = Box::new(ctr);
 
                 KeyUnwrapAlgorithmFfiParameters::AesCtr {
-                    params: ffi::SaUnwrapParametersAesCtr {
+                    params: ffi::sa_unwrap_parameters_aes_ctr {
                         ctr: ctr_box.as_ptr() as *const _,
                         ctr_length: ctr_len as size_t,
                     },
@@ -449,7 +453,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 let iv_box = Box::new(iv);
 
                 KeyUnwrapAlgorithmFfiParameters::AesGcm {
-                    params: ffi::SaUnwrapParametersAesGcm {
+                    params: ffi::sa_unwrap_parameters_aes_gcm {
                         iv: iv_box.as_ptr() as *const c_void,
                         iv_length: iv_len as size_t,
                         aad: aad.as_ptr() as *const c_void,
@@ -471,7 +475,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 let nonce_box = Box::new(nonce);
 
                 KeyUnwrapAlgorithmFfiParameters::ChaCha20 {
-                    params: ffi::SaUnwrapParametersChaCha20 {
+                    params: ffi::sa_unwrap_parameters_chacha20 {
                         counter: counter_box.as_ptr() as *const c_void,
                         counter_length: counter_len as size_t,
                         nonce: nonce_box.as_ptr() as *const c_void,
@@ -486,7 +490,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 let nonce_box = Box::new(nonce);
 
                 KeyUnwrapAlgorithmFfiParameters::ChaCha20Poly1305 {
-                    params: ffi::SaUnwrapParametersChaCha20Poly1305 {
+                    params: ffi::sa_unwrap_parameters_chacha20_poly1305 {
                         nonce: nonce_box.as_ptr() as *const c_void,
                         nonce_length: nonce_len as size_t,
                         aad: aad.as_ptr() as *const c_void,
@@ -510,7 +514,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 };
 
                 KeyUnwrapAlgorithmFfiParameters::RsaOaep {
-                    params: ffi::SaUnwrapParametersRsaOaep {
+                    params: ffi::sa_unwrap_parameters_rsa_oaep {
                         digest_algorithm: digest_algorithm.into(),
                         mgf1_digest_algorithm: mgf1_digest_algorithm.into(),
                         label: label_ptr as *mut _,
@@ -523,16 +527,24 @@ impl KeyUnwrapCipherAlgorithmParameters {
     }
 }
 
-impl From<&KeyUnwrapCipherAlgorithmParameters> for ffi::SaCipherAlgorithm {
+impl From<&KeyUnwrapCipherAlgorithmParameters> for ffi::sa_cipher_algorithm {
     fn from(value: &KeyUnwrapCipherAlgorithmParameters) -> Self {
         match value {
-            KeyUnwrapCipherAlgorithmParameters::AesCbc { .. } => Self::AES_CBC,
-            KeyUnwrapCipherAlgorithmParameters::AesCbcPkcs7 { .. } => Self::AES_CBC_PKCS7,
-            KeyUnwrapCipherAlgorithmParameters::AesCtr { .. } => Self::AES_CTR,
-            KeyUnwrapCipherAlgorithmParameters::AesGcm { .. } => Self::AES_GCM,
-            KeyUnwrapCipherAlgorithmParameters::ChaCha20 { .. } => Self::CHACHA20,
-            KeyUnwrapCipherAlgorithmParameters::ChaCha20Poly1305 { .. } => Self::CHACHA20_POLY1305,
-            KeyUnwrapCipherAlgorithmParameters::RsaOaep { .. } => Self::RSA_OAEP,
+            KeyUnwrapCipherAlgorithmParameters::AesCbc { .. } => Self::SA_CIPHER_ALGORITHM_AES_CBC,
+            KeyUnwrapCipherAlgorithmParameters::AesCbcPkcs7 { .. } => {
+                Self::SA_CIPHER_ALGORITHM_AES_CBC_PKCS7
+            }
+            KeyUnwrapCipherAlgorithmParameters::AesCtr { .. } => Self::SA_CIPHER_ALGORITHM_AES_CTR,
+            KeyUnwrapCipherAlgorithmParameters::AesGcm { .. } => Self::SA_CIPHER_ALGORITHM_AES_GCM,
+            KeyUnwrapCipherAlgorithmParameters::ChaCha20 { .. } => {
+                Self::SA_CIPHER_ALGORITHM_CHACHA20
+            }
+            KeyUnwrapCipherAlgorithmParameters::ChaCha20Poly1305 { .. } => {
+                Self::SA_CIPHER_ALGORITHM_CHACHA20_POLY1305
+            }
+            KeyUnwrapCipherAlgorithmParameters::RsaOaep { .. } => {
+                Self::SA_CIPHER_ALGORITHM_RSA_OAEP
+            }
         }
     }
 }
@@ -544,7 +556,7 @@ enum KeyUnwrapAlgorithmFfiParameters {
     AesCbc {
         /// The FFI parameters that will be passed into the C API for the unwrap
         /// value SA_CIPHER_ALGORITHM_AES_CBC
-        params: ffi::SaUnwrapParametersAesCbc,
+        params: ffi::sa_unwrap_parameters_aes_cbc,
 
         /// Initialization vector
         ///
@@ -560,7 +572,7 @@ enum KeyUnwrapAlgorithmFfiParameters {
     AesCbcPkcs7 {
         /// The FFI parameters that will be passed into the C API for the unwrap
         /// value SA_CIPHER_ALGORITHM_AES_CBC_PKCS7
-        params: ffi::SaUnwrapParametersAesCbc,
+        params: ffi::sa_unwrap_parameters_aes_cbc,
 
         /// Initialization vector
         ///
@@ -576,7 +588,7 @@ enum KeyUnwrapAlgorithmFfiParameters {
     AesCtr {
         /// The FFI parameters that will be passed into the C API for the unwrap
         /// value SA_CIPHER_ALGORITHM_AES_CTR
-        params: ffi::SaUnwrapParametersAesCtr,
+        params: ffi::sa_unwrap_parameters_aes_ctr,
 
         /// Concatenated nonce and counter value
         ///
@@ -592,7 +604,7 @@ enum KeyUnwrapAlgorithmFfiParameters {
     AesGcm {
         /// The FFI parameters that will be passed into the C API for the unwrap
         /// value SA_CIPHER_ALGORITHM_AES_GCM
-        params: ffi::SaUnwrapParametersAesGcm,
+        params: ffi::sa_unwrap_parameters_aes_gcm,
 
         /// Initialization vector
         ///
@@ -628,7 +640,7 @@ enum KeyUnwrapAlgorithmFfiParameters {
     ChaCha20 {
         /// The FFI parameters that will be passed into the C API for the unwrap
         /// value SA_CIPHER_ALGORITHM_CHACHA20
-        params: ffi::SaUnwrapParametersChaCha20,
+        params: ffi::sa_unwrap_parameters_chacha20,
 
         /// Counter value in little-endian format
         ///
@@ -654,7 +666,7 @@ enum KeyUnwrapAlgorithmFfiParameters {
     ChaCha20Poly1305 {
         /// The FFI parameters that will be passed into the C API for the unwrap
         /// value SA_CIPHER_ALGORITHM_CHACHA20_POLY1305
-        params: ffi::SaUnwrapParametersChaCha20Poly1305,
+        params: ffi::sa_unwrap_parameters_chacha20_poly1305,
 
         /// Nonce value
         ///
@@ -690,7 +702,7 @@ enum KeyUnwrapAlgorithmFfiParameters {
     RsaOaep {
         /// The FFI parameters that will be passed into the C API for the unwrap
         /// value SA_CIPHER_ALGORITHM_RSA_OAEP
-        params: ffi::SaUnwrapParametersRsaOaep,
+        params: ffi::sa_unwrap_parameters_rsa_oaep,
 
         /// Label
         ///
@@ -745,18 +757,18 @@ impl KeyGenerateType {
     fn into_ffi_parameters(self) -> KeyGenerateFfiParameters {
         match self {
             Self::Symmetric { key_length } => KeyGenerateFfiParameters::Symmetric {
-                params: ffi::SaGenerateParametersSymmetric { key_length },
+                params: ffi::sa_generate_parameters_symmetric { key_length },
             },
             Self::Rsa { modulus_length } => KeyGenerateFfiParameters::Rsa {
-                params: ffi::SaGenerateParametersRsa { modulus_length },
+                params: ffi::sa_generate_parameters_rsa { modulus_length },
             },
             Self::EllipticCurve { curve } => KeyGenerateFfiParameters::EllipticCurve {
-                params: ffi::SaGenerateParametersEc {
+                params: ffi::sa_generate_parameters_ec {
                     curve: curve.into(),
                 },
             },
             Self::DiffieHellman { prime, generator } => KeyGenerateFfiParameters::DiffieHellman {
-                params: ffi::SaGenerateParametersDh {
+                params: ffi::sa_generate_parameters_dh {
                     p: prime.as_ptr() as *const c_void,
                     p_length: prime.len(),
                     g: generator.as_ptr() as *const c_void,
@@ -769,13 +781,13 @@ impl KeyGenerateType {
     }
 }
 
-impl From<&KeyGenerateType> for ffi::SaKeyType {
+impl From<&KeyGenerateType> for ffi::sa_key_type {
     fn from(value: &KeyGenerateType) -> Self {
         match value {
-            KeyGenerateType::Symmetric { .. } => Self::SYMMETRIC,
-            KeyGenerateType::Rsa { .. } => Self::RSA,
-            KeyGenerateType::EllipticCurve { .. } => Self::EC,
-            KeyGenerateType::DiffieHellman { .. } => Self::DH,
+            KeyGenerateType::Symmetric { .. } => Self::SA_KEY_TYPE_SYMMETRIC,
+            KeyGenerateType::Rsa { .. } => Self::SA_KEY_TYPE_RSA,
+            KeyGenerateType::EllipticCurve { .. } => Self::SA_KEY_TYPE_EC,
+            KeyGenerateType::DiffieHellman { .. } => Self::SA_KEY_TYPE_DH,
         }
     }
 }
@@ -787,25 +799,25 @@ enum KeyGenerateFfiParameters {
     Symmetric {
         /// The FFI parameters that will be passed into the C API for the
         /// generate value SA_KEY_TYPE_SYMMETRIC
-        params: ffi::SaGenerateParametersSymmetric,
+        params: ffi::sa_generate_parameters_symmetric,
     },
     /// FFI Parameters for SA_KEY_TYPE_RSA
     Rsa {
         /// The FFI parameters that will be passed into the C API for the
         /// generate value SA_KEY_TYPE_RSA
-        params: ffi::SaGenerateParametersRsa,
+        params: ffi::sa_generate_parameters_rsa,
     },
     /// FFI Parameters for SA_KEY_TYPE_EC
     EllipticCurve {
         /// The FFI parameters that will be passed into the C API for the
         /// generate value SA_KEY_TYPE_EC
-        params: ffi::SaGenerateParametersEc,
+        params: ffi::sa_generate_parameters_ec,
     },
     /// FFI Parameters for SA_KEY_TYPE_DH
     DiffieHellman {
         /// The FFI parameters that will be passed into the C API for the import
         /// value SA_KEY_TYPE_DH
-        params: ffi::SaGenerateParametersDh,
+        params: ffi::sa_generate_parameters_dh,
 
         /// Prime
         ///
@@ -936,16 +948,18 @@ pub enum KeyDeriveParameters<'a> {
     },
 }
 
-impl<'a> From<&KeyDeriveParameters<'a>> for ffi::SaKdfAlgorithm {
+impl<'a> From<&KeyDeriveParameters<'a>> for ffi::sa_kdf_algorithm {
     fn from(val: &KeyDeriveParameters<'a>) -> Self {
         match val {
-            KeyDeriveParameters::RootKeyLadder { .. } => Self::ROOT_KEY_LADDER,
-            KeyDeriveParameters::Hkdf { .. } => Self::HKDF,
-            KeyDeriveParameters::Concat { .. } => Self::CONCAT,
-            KeyDeriveParameters::AnsiX963 { .. } => Self::ANSI_X963,
-            KeyDeriveParameters::Cmac { .. } => Self::CMAC,
-            KeyDeriveParameters::Netflix { .. } => Self::NETFLIX,
-            KeyDeriveParameters::CommonRootKeyLadder { .. } => Self::COMMON_ROOT_KEY_LADDER,
+            KeyDeriveParameters::RootKeyLadder { .. } => Self::SA_KDF_ALGORITHM_ROOT_KEY_LADDER,
+            KeyDeriveParameters::Hkdf { .. } => Self::SA_KDF_ALGORITHM_HKDF,
+            KeyDeriveParameters::Concat { .. } => Self::SA_KDF_ALGORITHM_CONCAT,
+            KeyDeriveParameters::AnsiX963 { .. } => Self::SA_KDF_ALGORITHM_ANSI_X963,
+            KeyDeriveParameters::Cmac { .. } => Self::SA_KDF_ALGORITHM_CMAC,
+            KeyDeriveParameters::Netflix { .. } => Self::SA_KDF_ALGORITHM_NETFLIX,
+            KeyDeriveParameters::CommonRootKeyLadder { .. } => {
+                Self::SA_KDF_ALGORITHM_COMMON_ROOT_KEY_LADDER
+            }
         }
     }
 }
@@ -965,7 +979,7 @@ impl KeyDeriveParameters<'_> {
                 let c4_box = Box::new(c4);
 
                 KeyKdfFfiParameters::RootKeyLadder {
-                    params: ffi::SaKdfParametersRootKeyLadder {
+                    params: ffi::sa_kdf_parameters_root_key_ladder {
                         c1: c1_box.as_ptr() as *const c_void,
                         c1_length: c1_length as size_t,
                         c2: c2_box.as_ptr() as *const c_void,
@@ -988,7 +1002,7 @@ impl KeyDeriveParameters<'_> {
                 salt,
                 info,
             } => KeyKdfFfiParameters::Hkdf {
-                params: ffi::SaKdfParametersHkdf {
+                params: ffi::sa_kdf_parameters_hkdf {
                     key_length,
                     digest_algorithm: digest_algorithm.into(),
                     parent: parent.key_handle,
@@ -1006,7 +1020,7 @@ impl KeyDeriveParameters<'_> {
                 parent,
                 info,
             } => KeyKdfFfiParameters::Concat {
-                params: ffi::SaKdfParametersConcat {
+                params: ffi::sa_kdf_parameters_concat {
                     key_length,
                     digest_algorithm: digest_algorithm.into(),
                     parent: parent.key_handle,
@@ -1021,7 +1035,7 @@ impl KeyDeriveParameters<'_> {
                 parent,
                 info,
             } => KeyKdfFfiParameters::AnsiX963 {
-                params: ffi::SaKdfParametersAnsiX963 {
+                params: ffi::sa_kdf_parameters_ansi_x963 {
                     key_length,
                     digest_algorithm: digest_algorithm.into(),
                     parent: parent.key_handle,
@@ -1036,7 +1050,7 @@ impl KeyDeriveParameters<'_> {
                 other_data,
                 counter,
             } => KeyKdfFfiParameters::Cmac {
-                params: ffi::SaKdfParametersCmac {
+                params: ffi::sa_kdf_parameters_cmac {
                     key_length,
                     parent: parent.key_handle,
                     other_data: other_data.as_ptr() as *const c_void,
@@ -1046,9 +1060,9 @@ impl KeyDeriveParameters<'_> {
                 other_data,
             },
             KeyDeriveParameters::Netflix { kenc, hmac } => KeyKdfFfiParameters::Netflix {
-                params: ffi::SaKdfParametersNetflix {
+                params: ffi::sa_kdf_parameters_netflix {
                     kenc: kenc.key_handle,
-                    hmac: hmac.key_handle,
+                    khmac: hmac.key_handle,
                 },
             },
             KeyDeriveParameters::CommonRootKeyLadder { c1, c2, c3, c4 } => {
@@ -1063,7 +1077,7 @@ impl KeyDeriveParameters<'_> {
                 let c4_box = Box::new(c4);
 
                 KeyKdfFfiParameters::CommonRootKeyLadder {
-                    params: ffi::SaKdfParametersRootKeyLadder {
+                    params: ffi::sa_kdf_parameters_root_key_ladder {
                         c1: c1_box.as_ptr() as *const c_void,
                         c1_length: c1_length as size_t,
                         c2: c2_box.as_ptr() as *const c_void,
@@ -1089,7 +1103,7 @@ enum KeyKdfFfiParameters {
     RootKeyLadder {
         /// The FFI parameters that will be passed into the C API for the derive
         /// value SA_KDF_ALGORITHM_ROOT_KEY_LADDER
-        params: ffi::SaKdfParametersRootKeyLadder,
+        params: ffi::sa_kdf_parameters_root_key_ladder,
 
         /// Input for first stage of the key ladder
         ///
@@ -1135,7 +1149,7 @@ enum KeyKdfFfiParameters {
     Hkdf {
         /// The FFI parameters that will be passed into the C API for the derive
         /// value SA_KDF_ALGORITHM_HKDF
-        params: ffi::SaKdfParametersHkdf,
+        params: ffi::sa_kdf_parameters_hkdf,
 
         /// Salt value
         ///
@@ -1161,7 +1175,7 @@ enum KeyKdfFfiParameters {
     Concat {
         /// The FFI parameters that will be passed into the C API for the derive
         /// value SA_KDF_ALGORITHM_CONCAT
-        params: ffi::SaKdfParametersConcat,
+        params: ffi::sa_kdf_parameters_concat,
 
         /// Info value
         ///
@@ -1177,7 +1191,7 @@ enum KeyKdfFfiParameters {
     AnsiX963 {
         /// The FFI parameters that will be passed into the C API for the derive
         /// value SA_KDF_ALGORITHM_ANSI_X963
-        params: ffi::SaKdfParametersAnsiX963,
+        params: ffi::sa_kdf_parameters_ansi_x963,
 
         /// Info value
         ///
@@ -1193,7 +1207,7 @@ enum KeyKdfFfiParameters {
     Cmac {
         /// The FFI parameters that will be passed into the C API for the derive
         /// value SA_KDF_ALGORITHM_CMAC
-        params: ffi::SaKdfParametersCmac,
+        params: ffi::sa_kdf_parameters_cmac,
 
         /// Other data
         ///
@@ -1209,13 +1223,13 @@ enum KeyKdfFfiParameters {
     Netflix {
         /// The FFI parameters that will be passed into the C API for the derive
         /// value SA_KDF_ALGORITHM_NETFLIX
-        params: ffi::SaKdfParametersNetflix,
+        params: ffi::sa_kdf_parameters_netflix,
     },
     /// FFI Parameters for SA_KDF_ALGORITHM_ROOT_KEY_LADDER
     CommonRootKeyLadder {
         /// The FFI parameters that will be passed into the C API for the derive
         /// value SA_KDF_ALGORITHM_ROOT_KEY_LADDER
-        params: ffi::SaKdfParametersRootKeyLadder,
+        params: ffi::sa_kdf_parameters_root_key_ladder,
 
         /// Input for first stage of the key ladder
         ///
@@ -1305,13 +1319,13 @@ pub enum KeySignParameters {
     Eddsa,
 }
 
-impl From<&KeySignParameters> for ffi::SaSignatureAlgorithm {
+impl From<&KeySignParameters> for ffi::sa_signature_algorithm {
     fn from(value: &KeySignParameters) -> Self {
         match value {
-            KeySignParameters::RsaPss { .. } => Self::RSA_PSS,
-            KeySignParameters::RsaPkcs1v15 { .. } => Self::RSA_PKCS1V15,
-            KeySignParameters::Ecdsa { .. } => Self::ECDSA,
-            KeySignParameters::Eddsa => Self::EDDSA,
+            KeySignParameters::RsaPss { .. } => Self::SA_SIGNATURE_ALGORITHM_RSA_PSS,
+            KeySignParameters::RsaPkcs1v15 { .. } => Self::SA_SIGNATURE_ALGORITHM_RSA_PKCS1V15,
+            KeySignParameters::Ecdsa { .. } => Self::SA_SIGNATURE_ALGORITHM_ECDSA,
+            KeySignParameters::Eddsa => Self::SA_SIGNATURE_ALGORITHM_EDDSA,
         }
     }
 }
@@ -1324,7 +1338,7 @@ impl KeySignParameters {
                 mgf1_digest_algorithm,
                 precomputed_digest,
                 salt_length,
-            } => KeySignFfiParameters::RsaPss(ffi::SaSignParametersRsaPss {
+            } => KeySignFfiParameters::RsaPss(ffi::sa_sign_parameters_rsa_pss {
                 digest_algorithm: digest_algorithm.into(),
                 mgf1_digest_algorithm: mgf1_digest_algorithm.into(),
                 precomputed_digest,
@@ -1333,14 +1347,14 @@ impl KeySignParameters {
             Self::RsaPkcs1v15 {
                 digest_algorithm,
                 precomputed_digest,
-            } => KeySignFfiParameters::RsaPkcs1v15(ffi::SaSignParametersRsaPkcs1v15 {
+            } => KeySignFfiParameters::RsaPkcs1v15(ffi::sa_sign_parameters_rsa_pkcs1v15 {
                 digest_algorithm: digest_algorithm.into(),
                 precomputed_digest,
             }),
             Self::Ecdsa {
                 digest_algorithm,
                 precomputed_digest,
-            } => KeySignFfiParameters::Ecdsa(ffi::SaSignParametersEcdsa {
+            } => KeySignFfiParameters::Ecdsa(ffi::sa_sign_parameters_ecdsa {
                 digest_algorithm: digest_algorithm.into(),
                 precomputed_digest,
             }),
@@ -1351,9 +1365,9 @@ impl KeySignParameters {
 
 #[derive(Debug)]
 enum KeySignFfiParameters {
-    RsaPss(ffi::SaSignParametersRsaPss),
-    RsaPkcs1v15(ffi::SaSignParametersRsaPkcs1v15),
-    Ecdsa(ffi::SaSignParametersEcdsa),
+    RsaPss(ffi::sa_sign_parameters_rsa_pss),
+    RsaPkcs1v15(ffi::sa_sign_parameters_rsa_pkcs1v15),
+    Ecdsa(ffi::sa_sign_parameters_ecdsa),
     Eddsa,
 }
 
@@ -1387,10 +1401,10 @@ pub struct KeyHeader {
     pub size: u16,
 }
 
-impl TryFrom<ffi::SaHeader> for KeyHeader {
+impl TryFrom<ffi::sa_header> for KeyHeader {
     type Error = ErrorStatus;
 
-    fn try_from(value: ffi::SaHeader) -> Result<Self, Self::Error> {
+    fn try_from(value: ffi::sa_header) -> Result<Self, Self::Error> {
         let magic = {
             let mut magic_array = ['\0'; 4];
 
@@ -1407,7 +1421,7 @@ impl TryFrom<ffi::SaHeader> for KeyHeader {
         Ok(Self {
             magic,
             rights: value.rights.into(),
-            key_type: ffi::SaKeyType::try_from(value.type_).unwrap().into(),
+            key_type: ffi::sa_key_type::try_from(value.type_).unwrap().into(),
             size: value.size,
         })
     }
@@ -1426,7 +1440,7 @@ pub struct PublicKey {
 
 #[derive(Debug)]
 pub struct Key {
-    pub(crate) key_handle: ffi::SaKey,
+    pub(crate) key_handle: ffi::sa_key,
 }
 
 impl Key {
@@ -1474,14 +1488,14 @@ impl Key {
     /// # }
     /// ```
     pub fn import(format: KeyImportFormat, bytes: &[u8]) -> Result<Self, ErrorStatus> {
-        let mut key_handle: ffi::SaKey = ffi::INVALID_HANDLE;
+        let mut key_handle: ffi::sa_key = ffi::INVALID_HANDLE;
 
         let key_format = (&format).into();
         let mut parameters = format.into_ffi_parameters();
 
         convert_result(unsafe {
             ffi::sa_key_import(
-                &mut key_handle as *mut ffi::SaKey,
+                &mut key_handle as *mut ffi::sa_key,
                 key_format,
                 bytes.as_ptr() as *const c_void,
                 bytes.len(),
@@ -1505,7 +1519,7 @@ impl Key {
         wrapping_key: &Key,
         cipher_bytes: &[u8],
     ) -> Result<Self, ErrorStatus> {
-        let mut key_handle: ffi::SaKey = ffi::INVALID_HANDLE;
+        let mut key_handle: ffi::sa_key = ffi::INVALID_HANDLE;
 
         // Convert the sa_rights
         let sa_rights = rights.into();
@@ -1536,7 +1550,7 @@ impl Key {
     }
 
     pub fn generate(type_: KeyGenerateType, rights: Rights) -> Result<Self, ErrorStatus> {
-        let mut key_handle: ffi::SaKey = ffi::INVALID_HANDLE;
+        let mut key_handle: ffi::sa_key = ffi::INVALID_HANDLE;
 
         let key_type = (&type_).into();
         let mut parameters = type_.into_ffi_parameters();
@@ -1615,7 +1629,7 @@ impl Key {
     }
 
     pub fn derive(rights: Rights, params: KeyDeriveParameters<'_>) -> Result<Self, ErrorStatus> {
-        let mut key_handle: ffi::SaKey = ffi::INVALID_HANDLE;
+        let mut key_handle: ffi::sa_key = ffi::INVALID_HANDLE;
 
         let kdf_algorithm = (&params).into();
         let mut parameters = params.into_ffi_parameters();
@@ -1639,12 +1653,12 @@ impl Key {
         // values will be overridden by the ffi::sa_key_header call but the
         // memory needs to exist and be initialized in order for Rust to be
         // happy.
-        let mut header = ffi::SaHeader {
+        let mut header = ffi::sa_header {
             magic: [0; 4],
             rights: Rights::allow_all().into(),
             type_: 0,
-            type_parameters: ffi::SaTypeParameters {
-                curve: ffi::SaEllipticCurve::ED25519,
+            type_parameters: ffi::sa_type_parameters {
+                curve: ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_ED25519,
             },
             size: 0,
         };

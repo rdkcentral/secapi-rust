@@ -1,5 +1,5 @@
-/**
- * Copyright 2023 Comcast Cable Communications Management, LLC
+/*
+ * Copyright 2023-2025 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 use std::{error::Error, fmt::Display, ptr::null_mut};
 
 use bitflags::bitflags;
@@ -80,21 +81,26 @@ impl Display for ErrorStatus {
 // The reason for this is that the ffi::SaStatus has the Ok status. Since
 // ErrorStatus only contains errors we can't directly convert between the types
 // because for the SaStatus::OK case we want return Ok(()).
-fn convert_result(sa_status: ffi::SaStatus) -> Result<(), ErrorStatus> {
+fn convert_result(sa_status: ffi::sa_status) -> Result<(), ErrorStatus> {
     match sa_status {
-        ffi::SaStatus::OK => Ok(()),
-        ffi::SaStatus::NO_AVAILABLE_RESOURCE_SLOT => Err(ErrorStatus::NoAvailableResourceSlot),
-        ffi::SaStatus::INVALID_KEY_FORMAT => Err(ErrorStatus::InvalidKeyFormat),
-        ffi::SaStatus::INVALID_KEY_TYPE => Err(ErrorStatus::InvalidKeyType),
-        ffi::SaStatus::NULL_PARAMETER => Err(ErrorStatus::NullParameter),
-        ffi::SaStatus::INVALID_PARAMETER => Err(ErrorStatus::InvalidParameter),
-        ffi::SaStatus::OPERATION_NOT_ALLOWED => Err(ErrorStatus::OperationNotAllowed),
-        ffi::SaStatus::INVALID_SVP_BUFFER => Err(ErrorStatus::InvalidSvpBuffer),
-        ffi::SaStatus::OPERATION_NOT_SUPPORTED => Err(ErrorStatus::OperationNotSupported),
-        ffi::SaStatus::SELF_TEST => Err(ErrorStatus::SelfTest),
-        ffi::SaStatus::VERIFICATION_FAILED => Err(ErrorStatus::VerificationFailed),
-        ffi::SaStatus::INTERNAL_ERROR => Err(ErrorStatus::InternalError),
-        ffi::SaStatus::HW_ERROR => Err(ErrorStatus::HardwareError),
+        ffi::sa_status::SA_STATUS_OK => Ok(()),
+        ffi::sa_status::SA_STATUS_NO_AVAILABLE_RESOURCE_SLOT => {
+            Err(ErrorStatus::NoAvailableResourceSlot)
+        }
+        ffi::sa_status::SA_STATUS_INVALID_KEY_FORMAT => Err(ErrorStatus::InvalidKeyFormat),
+        ffi::sa_status::SA_STATUS_INVALID_KEY_TYPE => Err(ErrorStatus::InvalidKeyType),
+        ffi::sa_status::SA_STATUS_NULL_PARAMETER => Err(ErrorStatus::NullParameter),
+        ffi::sa_status::SA_STATUS_INVALID_PARAMETER => Err(ErrorStatus::InvalidParameter),
+        ffi::sa_status::SA_STATUS_OPERATION_NOT_ALLOWED => Err(ErrorStatus::OperationNotAllowed),
+        ffi::sa_status::SA_STATUS_INVALID_SVP_BUFFER => Err(ErrorStatus::InvalidSvpBuffer),
+        ffi::sa_status::SA_STATUS_OPERATION_NOT_SUPPORTED => {
+            Err(ErrorStatus::OperationNotSupported)
+        }
+        ffi::sa_status::SA_STATUS_SELF_TEST => Err(ErrorStatus::SelfTest),
+        ffi::sa_status::SA_STATUS_VERIFICATION_FAILED => Err(ErrorStatus::VerificationFailed),
+        ffi::sa_status::SA_STATUS_INTERNAL_ERROR => Err(ErrorStatus::InternalError),
+        ffi::sa_status::SA_STATUS_HW_ERROR => Err(ErrorStatus::HardwareError),
+        _ => panic!("invalid sa_status: {sa_status:?}"),
     }
 }
 
@@ -135,18 +141,18 @@ pub enum EllipticCurve {
     X448,
 }
 
-impl From<EllipticCurve> for ffi::SaEllipticCurve {
+impl From<EllipticCurve> for ffi::sa_elliptic_curve {
     fn from(value: EllipticCurve) -> Self {
         match value {
-            EllipticCurve::NistP192 => Self::NIST_P192,
-            EllipticCurve::NistP224 => Self::NIST_P224,
-            EllipticCurve::NistP256 => Self::NIST_P256,
-            EllipticCurve::NistP384 => Self::NIST_P384,
-            EllipticCurve::NistP521 => Self::NIST_P521,
-            EllipticCurve::ED25519 => Self::ED25519,
-            EllipticCurve::X25519 => Self::X25519,
-            EllipticCurve::ED448 => Self::ED448,
-            EllipticCurve::X448 => Self::X448,
+            EllipticCurve::NistP192 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_NIST_P192,
+            EllipticCurve::NistP224 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_NIST_P224,
+            EllipticCurve::NistP256 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_NIST_P256,
+            EllipticCurve::NistP384 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_NIST_P384,
+            EllipticCurve::NistP521 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_NIST_P521,
+            EllipticCurve::ED25519 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_ED25519,
+            EllipticCurve::X25519 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_X25519,
+            EllipticCurve::ED448 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_ED448,
+            EllipticCurve::X448 => ffi::sa_elliptic_curve::SA_ELLIPTIC_CURVE_X448,
         }
     }
 }
@@ -238,7 +244,8 @@ bitflags! {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rights {
     /// Key identifier. Not used internally by SecAPI.
-    id: [u8; 64],
+    // TODO(#2): Note that this type is incorrect and should be fixed upstream.
+    id: [i8; 64],
     /// Usage flags bitfield.
     usage_flags: UsageFlags,
     /// Usage flags bitfield for unwrapped child keys.
@@ -287,8 +294,8 @@ impl Rights {
     }
 }
 
-impl From<ffi::SaRights> for Rights {
-    fn from(value: ffi::SaRights) -> Self {
+impl From<ffi::sa_rights> for Rights {
+    fn from(value: ffi::sa_rights) -> Self {
         // Rust does not support collect::<> on array so we have todo this the old
         // fashion way
         let mut allowed_tas = [Uuid::from_bytes([
@@ -309,8 +316,8 @@ impl From<ffi::SaRights> for Rights {
     }
 }
 
-impl From<&ffi::SaRights> for Rights {
-    fn from(value: &ffi::SaRights) -> Self {
+impl From<&ffi::sa_rights> for Rights {
+    fn from(value: &ffi::sa_rights) -> Self {
         // Rust does not support collect::<> on array so we have todo this the old
         // fashion way
         let mut allowed_tas = [Uuid::from_bytes([
@@ -331,17 +338,17 @@ impl From<&ffi::SaRights> for Rights {
     }
 }
 
-impl From<Rights> for ffi::SaRights {
+impl From<Rights> for ffi::sa_rights {
     fn from(value: Rights) -> Self {
         // Rust does not support collect::<> on array so we have todo this the old
         // fashion way
-        let mut allowed_tas = [ffi::SaUuid {
+        let mut allowed_tas = [ffi::sa_uuid {
             id: [
                 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             ],
         }; ffi::MAX_NUM_ALLOWED_TA_IDS];
         for (i, &uuid) in value.allowed_tas.iter().enumerate() {
-            allowed_tas[i] = ffi::SaUuid {
+            allowed_tas[i] = ffi::sa_uuid {
                 id: *uuid.as_bytes(),
             };
         }
@@ -357,17 +364,17 @@ impl From<Rights> for ffi::SaRights {
     }
 }
 
-impl From<&Rights> for ffi::SaRights {
+impl From<&Rights> for ffi::sa_rights {
     fn from(value: &Rights) -> Self {
         // Rust does not support collect::<> on array so we have todo this the old
         // fashion way
-        let mut allowed_tas = [ffi::SaUuid {
+        let mut allowed_tas = [ffi::sa_uuid {
             id: [
                 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
             ],
         }; ffi::MAX_NUM_ALLOWED_TA_IDS];
         for (i, &uuid) in value.allowed_tas.iter().enumerate() {
-            allowed_tas[i] = ffi::SaUuid {
+            allowed_tas[i] = ffi::sa_uuid {
                 id: *uuid.as_bytes(),
             };
         }
@@ -396,13 +403,13 @@ pub enum DigestAlgorithm {
     SHA512,
 }
 
-impl From<DigestAlgorithm> for ffi::SaDigestAlgorithm {
+impl From<DigestAlgorithm> for ffi::sa_digest_algorithm {
     fn from(value: DigestAlgorithm) -> Self {
         match value {
-            DigestAlgorithm::SHA1 => Self::SHA1,
-            DigestAlgorithm::SHA256 => Self::SHA256,
-            DigestAlgorithm::SHA384 => Self::SHA384,
-            DigestAlgorithm::SHA512 => Self::SHA512,
+            DigestAlgorithm::SHA1 => ffi::sa_digest_algorithm::SA_DIGEST_ALGORITHM_SHA1,
+            DigestAlgorithm::SHA256 => ffi::sa_digest_algorithm::SA_DIGEST_ALGORITHM_SHA256,
+            DigestAlgorithm::SHA384 => ffi::sa_digest_algorithm::SA_DIGEST_ALGORITHM_SHA384,
+            DigestAlgorithm::SHA512 => ffi::sa_digest_algorithm::SA_DIGEST_ALGORITHM_SHA512,
         }
     }
 }
@@ -432,8 +439,8 @@ pub struct Version {
     pub implementation_revision: u64,
 }
 
-impl From<ffi::SaVersion> for Version {
-    fn from(value: ffi::SaVersion) -> Self {
+impl From<ffi::sa_version> for Version {
+    fn from(value: ffi::sa_version) -> Self {
         Version {
             specification_major: value.specification_major,
             specification_minor: value.specification_minor,
@@ -465,7 +472,7 @@ impl From<ffi::SaVersion> for Version {
 /// # }
 /// ```
 pub fn version() -> Result<Version, ErrorStatus> {
-    let mut sa_version = ffi::SaVersion {
+    let mut sa_version = ffi::sa_version {
         specification_major: 0,
         specification_minor: 0,
         specification_revision: 0,
@@ -562,7 +569,7 @@ pub fn device_id() -> Result<DeviceId, ErrorStatus> {
 /// # }
 /// ```
 pub fn ta_uuid() -> Result<Uuid, ErrorStatus> {
-    let mut sa_uuid = ffi::SaUuid { id: [0; 16] };
+    let mut sa_uuid = ffi::sa_uuid { id: [0; 16] };
 
     convert_result(unsafe { ffi::sa_get_ta_uuid(&mut sa_uuid) })?;
 

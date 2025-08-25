@@ -15,10 +15,9 @@ edition.workspace = true
 [lib]
 doctest = false
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [features]
 system-sa-client = ["secapi-sys/system-sa-client"]
+bindgen = ["secapi-sys/bindgen"]
 
 [dependencies]
 libc = "0.2.147"

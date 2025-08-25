@@ -1,5 +1,5 @@
-/**
- * Copyright 2023 Comcast Cable Communications Management, LLC
+/*
+ * Copyright 2023-2025 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,76 +15,115 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-use std::process::Command;
+
+use std::{path::PathBuf, process::Command};
 
 fn main() {
-    // If we are using the system provided libsaclient.so then just link to
-    // it and exit
-    if std::env::var("CARGO_FEATURE_SYSTEM_SA_CLIENT").is_err() {
-        // Copy over the git submodule source to the OUT_DIR.
-        let out_dir = std::env::var("OUT_DIR").unwrap();
-        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
-        let cmake_out_dir = [&manifest_dir, "tasecureapi"]
-            .iter()
-            .collect::<std::path::PathBuf>();
-        let rust_out_dir = [&out_dir, "tasecureapi"]
-            .iter()
-            .collect::<std::path::PathBuf>();
+    let out_dir = PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
+    let tasecureapi_source_dir = PathBuf::from_iter(["tasecureapi", "reference"]);
+    let tasecureapi_bin_dir = out_dir.join("build-tasecureapi");
+    let stage_dir = out_dir.join("stage");
+    let lib_dir = stage_dir.join("usr").join("local").join("lib");
+    let include_dir = stage_dir.join("usr").join("local").join("include");
 
-        std::fs::remove_dir_all(&rust_out_dir).ok();
-        copy_dir::copy_dir(&cmake_out_dir, &rust_out_dir).unwrap();
-        println!("cargo:rerun-if-changed={}", cmake_out_dir.display());
-
-        // Set the build dir
-        println!("building from {}", rust_out_dir.display());
-        std::env::set_current_dir(&rust_out_dir).unwrap();
+    if cfg!(feature = "system-sa-client") {
+        println!("cargo:rustc-link-lib=dylib=saclient");
+    } else {
+        println!(
+            "cargo:rerun-if-changed={}",
+            tasecureapi_source_dir.to_str().unwrap()
+        );
 
         // Configure the cmake build
         let status = Command::new("cmake")
-            .args(["-S", "reference"])
-            .args(["-B", "reference/cmake-build"])
-            .args(["-DBUILD_TESTS=FALSE"])
+            .args(["-S".as_ref(), tasecureapi_source_dir.as_os_str()])
+            .args(["-B".as_ref(), tasecureapi_bin_dir.as_os_str()])
+            .arg("-DBUILD_DOC=NO")
+            .arg("-DBUILD_TESTS=NO")
             .status()
             .expect("Cmake could not be run. Is it installed?");
         assert!(status.success(), "Cmake failed to configure tasecureapi");
 
         // Compile
         let status = Command::new("cmake")
-            .args(["--build", "reference/cmake-build"])
+            .args(["--build".as_ref(), tasecureapi_bin_dir.as_os_str()])
             .status()
             .expect("Cmake could not be run. Is it installed?");
         assert!(status.success(), "Cmake failed to build tasecureapi");
 
         // Install
         let status = Command::new("cmake")
-            .args(["--install", "reference/cmake-build"])
-            .args(["--prefix", "./install"])
+            .env("DESTDIR", stage_dir.as_os_str())
+            .args(["--install".as_ref(), tasecureapi_bin_dir.as_os_str()])
             .status()
             .expect("Cmake could not be run. Is it installed?");
         assert!(status.success(), "Cmake failed to install tasecureapi");
 
-        // Link against libsaclient.so
-        let cmake_artifacts_dir = [rust_out_dir.to_str().unwrap(), "install", "lib"]
-            .iter()
-            .collect::<std::path::PathBuf>();
-
         println!(
             "cargo:rustc-link-search=native={}",
-            cmake_artifacts_dir.display()
+            lib_dir.to_str().unwrap()
         );
+        println!("cargo:rustc-link-lib=dylib=saclient");
     }
 
-    // Link our executable to libsaclient.so
-    println!("cargo:rustc-link-lib=dylib=saclient");
+    //if cfg!(feature = "bindgen") {
+    let bindings = bindgen::builder()
+        .clang_args(["-I", include_dir.to_str().unwrap()])
+        .newtype_enum(".*")
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .parse_callbacks(Box::new(FixMacrosCallback))
+        .generate_comments(false)
+        .header_contents("saclient-api.h", SACLIENT_API_HEADER)
+        .generate()
+        .unwrap();
+    bindings.write_to_file(out_dir.join("bindings.rs")).unwrap();
+    //}
+}
 
-    // Dynamical link to libstdc++ and libc
-    // Note: The order is extremely important here. libsaclient.so must be linked before
-    // libstdc++.so and libc.so. The linker will complain about unresolved symbols in libsaclient.so
-    // if the two libraries are linked before.
-    if cfg!(target_os = "macos") {
-        println!("cargo:rustc-link-lib=dylib=c++");
-    } else {
-        println!("cargo:rustc-link-lib=dylib=stdc++");
+/// C header file contents that comprise the public API of `tasecureapi`.
+const SACLIENT_API_HEADER: &str = r#"
+#include <sa_cenc.h>
+#include <sa_crypto.h>
+#include <sa.h>
+#include <sa_key.h>
+#include <sa_svp.h>
+#include <sa_types.h>
+
+/*
+ * TODO(DTM-4526): These headers re-export openssl headers which currently
+ * cannot always be found e.g. when vendoring the `tasecureapi` reference
+ * implementation.
+ */
+//#include <sa_engine.h>
+//#include <sa_provider.h>
+
+// This header is installed but bindings for the types defined here are not needed.
+//#include <sa_ta_types.h>
+"#;
+
+/// A bindgen callback to adjust how certain macros in the public API of `tasecureapi` are parsed.
+#[derive(Debug)]
+struct FixMacrosCallback;
+
+impl bindgen::callbacks::ParseCallbacks for FixMacrosCallback {
+    fn will_parse_macro(&self, name: &str) -> bindgen::callbacks::MacroParsingBehavior {
+        match name {
+            // Ignore parsing `INVALID_HANDLE` to avoid name collisions because it is defined
+            // manually.
+            "INVALID_HANDLE" => bindgen::callbacks::MacroParsingBehavior::Ignore,
+            _ => bindgen::callbacks::MacroParsingBehavior::Default,
+        }
     }
-    println!("cargo:rustc-link-lib=dylib=c");
+
+    fn int_macro(&self, name: &str, _value: i64) -> Option<bindgen::callbacks::IntKind> {
+        match name {
+            // This macro should be of type `usize` so it can be used as the length operand in an
+            // array expression e.g. `[0; MAX_NUM_ALLOWED_TA_IDS]`.
+            "MAX_NUM_ALLOWED_TA_IDS" => Some(bindgen::callbacks::IntKind::Custom {
+                name: "usize",
+                is_signed: false,
+            }),
+            _ => None,
+        }
+    }
 }
