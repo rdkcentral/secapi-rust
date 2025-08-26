@@ -248,8 +248,7 @@ bitflags! {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rights {
     /// Key identifier. Not used internally by SecAPI.
-    // TODO(#2): Note that this type is incorrect and should be fixed upstream.
-    id: [i8; 64],
+    id: [c_char; 64],
     /// Usage flags bitfield.
     usage_flags: UsageFlags,
     /// Usage flags bitfield for unwrapped child keys.
