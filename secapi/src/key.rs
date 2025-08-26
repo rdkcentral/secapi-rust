@@ -17,7 +17,6 @@
  */
 use std::{ffi::c_void, ptr::null_mut};
 
-use libc::size_t;
 use secapi_sys as ffi;
 
 use crate::{convert_result, DigestAlgorithm, EllipticCurve, ErrorStatus, FfiParameters, Rights};
@@ -419,7 +418,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 KeyUnwrapAlgorithmFfiParameters::AesCbc {
                     params: ffi::sa_unwrap_parameters_aes_cbc {
                         iv: iv_box.as_ptr() as *const c_void,
-                        iv_length: iv_len as size_t,
+                        iv_length: iv_len,
                     },
                     iv: iv_box,
                 }
@@ -431,7 +430,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 KeyUnwrapAlgorithmFfiParameters::AesCbcPkcs7 {
                     params: ffi::sa_unwrap_parameters_aes_cbc {
                         iv: iv_box.as_ptr() as *const _,
-                        iv_length: iv_len as size_t,
+                        iv_length: iv_len,
                     },
                     iv: iv_box,
                 }
@@ -443,7 +442,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 KeyUnwrapAlgorithmFfiParameters::AesCtr {
                     params: ffi::sa_unwrap_parameters_aes_ctr {
                         ctr: ctr_box.as_ptr() as *const _,
-                        ctr_length: ctr_len as size_t,
+                        ctr_length: ctr_len,
                     },
                     ctr: ctr_box,
                 }
@@ -455,11 +454,11 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 KeyUnwrapAlgorithmFfiParameters::AesGcm {
                     params: ffi::sa_unwrap_parameters_aes_gcm {
                         iv: iv_box.as_ptr() as *const c_void,
-                        iv_length: iv_len as size_t,
+                        iv_length: iv_len,
                         aad: aad.as_ptr() as *const c_void,
-                        aad_length: aad.len() as size_t,
+                        aad_length: aad.len(),
                         tag: tag.as_ptr() as *const c_void,
-                        tag_length: tag.len() as size_t,
+                        tag_length: tag.len(),
                     },
                     iv: iv_box,
                     aad,
@@ -477,9 +476,9 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 KeyUnwrapAlgorithmFfiParameters::ChaCha20 {
                     params: ffi::sa_unwrap_parameters_chacha20 {
                         counter: counter_box.as_ptr() as *const c_void,
-                        counter_length: counter_len as size_t,
+                        counter_length: counter_len,
                         nonce: nonce_box.as_ptr() as *const c_void,
-                        nonce_length: nonce_len as size_t,
+                        nonce_length: nonce_len,
                     },
                     counter: counter_box,
                     nonce: nonce_box,
@@ -492,11 +491,11 @@ impl KeyUnwrapCipherAlgorithmParameters {
                 KeyUnwrapAlgorithmFfiParameters::ChaCha20Poly1305 {
                     params: ffi::sa_unwrap_parameters_chacha20_poly1305 {
                         nonce: nonce_box.as_ptr() as *const c_void,
-                        nonce_length: nonce_len as size_t,
+                        nonce_length: nonce_len,
                         aad: aad.as_ptr() as *const c_void,
-                        aad_length: aad.len() as size_t,
+                        aad_length: aad.len(),
                         tag: tag.as_ptr() as *const c_void,
-                        tag_length: tag.len() as size_t,
+                        tag_length: tag.len(),
                     },
                     nonce: nonce_box,
                     aad,
@@ -518,7 +517,7 @@ impl KeyUnwrapCipherAlgorithmParameters {
                         digest_algorithm: digest_algorithm.into(),
                         mgf1_digest_algorithm: mgf1_digest_algorithm.into(),
                         label: label_ptr as *mut _,
-                        label_length: label_len as size_t,
+                        label_length: label_len,
                     },
                     maybe_label,
                 }
@@ -981,13 +980,13 @@ impl KeyDeriveParameters<'_> {
                 KeyKdfFfiParameters::RootKeyLadder {
                     params: ffi::sa_kdf_parameters_root_key_ladder {
                         c1: c1_box.as_ptr() as *const c_void,
-                        c1_length: c1_length as size_t,
+                        c1_length,
                         c2: c2_box.as_ptr() as *const c_void,
-                        c2_length: c2_length as size_t,
+                        c2_length,
                         c3: c3_box.as_ptr() as *const c_void,
-                        c3_length: c3_length as size_t,
+                        c3_length,
                         c4: c4_box.as_ptr() as *const c_void,
-                        c4_length: c4_length as size_t,
+                        c4_length,
                     },
                     c1: c1_box,
                     c2: c2_box,
@@ -1007,9 +1006,9 @@ impl KeyDeriveParameters<'_> {
                     digest_algorithm: digest_algorithm.into(),
                     parent: parent.key_handle,
                     salt: salt.as_ptr() as *const c_void,
-                    salt_length: salt.len() as size_t,
+                    salt_length: salt.len(),
                     info: info.as_ptr() as *const c_void,
-                    info_length: info.len() as size_t,
+                    info_length: info.len(),
                 },
                 salt,
                 info,
@@ -1025,7 +1024,7 @@ impl KeyDeriveParameters<'_> {
                     digest_algorithm: digest_algorithm.into(),
                     parent: parent.key_handle,
                     info: info.as_ptr() as *const c_void,
-                    info_length: info.len() as size_t,
+                    info_length: info.len(),
                 },
                 info,
             },
@@ -1040,7 +1039,7 @@ impl KeyDeriveParameters<'_> {
                     digest_algorithm: digest_algorithm.into(),
                     parent: parent.key_handle,
                     info: info.as_ptr() as *const c_void,
-                    info_length: info.len() as size_t,
+                    info_length: info.len(),
                 },
                 info,
             },
@@ -1054,7 +1053,7 @@ impl KeyDeriveParameters<'_> {
                     key_length,
                     parent: parent.key_handle,
                     other_data: other_data.as_ptr() as *const c_void,
-                    other_data_length: other_data.len() as size_t,
+                    other_data_length: other_data.len(),
                     counter,
                 },
                 other_data,
@@ -1079,13 +1078,13 @@ impl KeyDeriveParameters<'_> {
                 KeyKdfFfiParameters::CommonRootKeyLadder {
                     params: ffi::sa_kdf_parameters_root_key_ladder {
                         c1: c1_box.as_ptr() as *const c_void,
-                        c1_length: c1_length as size_t,
+                        c1_length,
                         c2: c2_box.as_ptr() as *const c_void,
-                        c2_length: c2_length as size_t,
+                        c2_length,
                         c3: c3_box.as_ptr() as *const c_void,
-                        c3_length: c3_length as size_t,
+                        c3_length,
                         c4: c4_box.as_ptr() as *const c_void,
-                        c4_length: c4_length as size_t,
+                        c4_length,
                     },
                     c1: c1_box,
                     c2: c2_box,
@@ -1342,7 +1341,7 @@ impl KeySignParameters {
                 digest_algorithm: digest_algorithm.into(),
                 mgf1_digest_algorithm: mgf1_digest_algorithm.into(),
                 precomputed_digest,
-                salt_length: salt_length as size_t,
+                salt_length,
             }),
             Self::RsaPkcs1v15 {
                 digest_algorithm,
@@ -1542,7 +1541,7 @@ impl Key {
                 key_cipher_algorithm_ffi_params.ffi_ptr(),
                 wrapping_key.key_handle,
                 cipher_bytes.as_ptr() as *const _,
-                cipher_bytes.len() as size_t,
+                cipher_bytes.len(),
             )
         })?;
 
@@ -1570,7 +1569,7 @@ impl Key {
     }
 
     pub fn export(&self, mut mixin: Option<[u8; 16]>) -> Result<Vec<u8>, ErrorStatus> {
-        let mut out_length: size_t = 0;
+        let mut out_length = 0;
 
         // The mixin can either be provided or not. If the caller did not provide it,
         // the FFI will expect a nullptr.
@@ -1607,7 +1606,7 @@ impl Key {
     }
 
     pub fn public_component(&self) -> Result<PublicKey, ErrorStatus> {
-        let mut out_length: size_t = 0;
+        let mut out_length = 0;
 
         // Figure out the size of the public key
         convert_result(unsafe {
@@ -1669,7 +1668,7 @@ impl Key {
     }
 
     pub fn digest(&self, digest_algorithm: DigestAlgorithm) -> Result<Vec<u8>, ErrorStatus> {
-        let mut out_length: size_t = 0;
+        let mut out_length = 0;
 
         // Figure out the size of the digest
         convert_result(unsafe {
@@ -1700,7 +1699,7 @@ impl Key {
         let signature_algorithm = (&params).into();
         let mut parameters = params.into_ffi_parameters();
 
-        let mut out_length: size_t = 0;
+        let mut out_length = 0;
 
         // Figure the size of the signed output
         convert_result(unsafe {
@@ -1710,7 +1709,7 @@ impl Key {
                 signature_algorithm,
                 self.key_handle,
                 in_.as_ptr() as *const _,
-                in_.len() as size_t,
+                in_.len(),
                 parameters.ffi_ptr(),
             )
         })?;
@@ -1725,7 +1724,7 @@ impl Key {
                 signature_algorithm,
                 self.key_handle,
                 in_.as_ptr() as *const _,
-                in_.len() as size_t,
+                in_.len(),
                 parameters.ffi_ptr(),
             )
         })?;

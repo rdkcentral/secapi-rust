@@ -16,11 +16,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use std::{error::Error, fmt::Display, ptr::null_mut};
+use std::{
+    error::Error,
+    ffi::{c_char, c_void},
+    fmt::Display,
+    ptr::null_mut,
+};
 
 use bitflags::bitflags;
 use chrono::{DateTime, NaiveDate, Utc};
-use libc::{c_char, c_void, size_t};
 use secapi_sys as ffi;
 use uuid::Uuid;
 
@@ -499,7 +503,7 @@ pub fn version() -> Result<Version, ErrorStatus> {
 /// # }
 /// ```
 pub fn name() -> Result<String, ErrorStatus> {
-    let mut name_size: size_t = 0;
+    let mut name_size: usize = 0;
 
     convert_result(unsafe { ffi::sa_get_name(null_mut(), &mut name_size) })?;
 

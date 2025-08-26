@@ -15,7 +15,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-use libc::size_t;
 use secapi_sys as ffi;
 use std::{ffi::c_void, ptr::null_mut};
 
@@ -137,7 +136,7 @@ impl<'a> MacContext<'a> {
     }
 
     pub fn compute(&self) -> Result<Vec<u8>, ErrorStatus> {
-        let mut out_length: size_t = 0;
+        let mut out_length = 0;
 
         // Figure out the size of the MAC
         convert_result(unsafe {
