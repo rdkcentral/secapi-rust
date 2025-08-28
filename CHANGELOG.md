@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Use bindgen to automatically generate bindings to `secapi`
+- Use bindgen to automatically generate bindings to `secapi` #22
 
 ## v0.2.2 (2025-05-13)
 
