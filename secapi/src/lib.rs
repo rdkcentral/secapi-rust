@@ -461,7 +461,7 @@ pub fn version() -> Result<Version, ErrorStatus> {
 
     convert_result(unsafe { ffi::sa_get_version(&mut sa_version) })?;
 
-    Ok(sa_version.into())
+    Ok(sa_version)
 }
 
 /// Obtain the SecAPI implementation name, e.g. SoC manufacturer.

@@ -240,8 +240,8 @@ mod test {
 
     #[test]
     fn allocate_buffer_with_underlying_memory() -> Result<(), ErrorStatus> {
-        let mut svp_memory = SvpMemory::allocate(128)?;
-        let _svp_buffer = SvpBuffer::with_underlying_memory(&mut svp_memory)?;
+        let svp_memory = SvpMemory::allocate(128)?;
+        let _svp_buffer = SvpBuffer::with_underlying_memory(&svp_memory)?;
         Ok(())
     }
 
