@@ -66,18 +66,16 @@ fn main() {
         println!("cargo:rustc-link-lib=dylib=saclient");
     }
 
-    //if cfg!(feature = "bindgen") {
     let bindings = bindgen::builder()
         .clang_args(["-I", include_dir.to_str().unwrap()])
         .newtype_enum(".*")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        .parse_callbacks(Box::new(FixMacrosCallback))
+        .parse_callbacks(Box::new(CustomCallback))
         .generate_comments(false)
         .header_contents("saclient-api.h", SACLIENT_API_HEADER)
         .generate()
         .unwrap();
     bindings.write_to_file(out_dir.join("bindings.rs")).unwrap();
-    //}
 }
 
 /// C header file contents that comprise the public API of `tasecureapi`.
@@ -101,11 +99,11 @@ const SACLIENT_API_HEADER: &str = r#"
 //#include <sa_ta_types.h>
 "#;
 
-/// A bindgen callback to adjust how certain macros in the public API of `tasecureapi` are parsed.
+/// A bindgen callback to fixup auto-generated bindings.
 #[derive(Debug)]
-struct FixMacrosCallback;
+struct CustomCallback;
 
-impl bindgen::callbacks::ParseCallbacks for FixMacrosCallback {
+impl bindgen::callbacks::ParseCallbacks for CustomCallback {
     fn will_parse_macro(&self, name: &str) -> bindgen::callbacks::MacroParsingBehavior {
         match name {
             // Ignore parsing `INVALID_HANDLE` to avoid name collisions because it is defined
@@ -124,6 +122,23 @@ impl bindgen::callbacks::ParseCallbacks for FixMacrosCallback {
                 is_signed: false,
             }),
             _ => None,
+        }
+    }
+
+    fn add_derives(&self, info: &bindgen::callbacks::DeriveInfo<'_>) -> Vec<String> {
+        use bindgen::callbacks::{DeriveInfo, TypeKind};
+
+        match info {
+            // For the `sa_version` struct, add these extra derives to improve usability in the
+            // `secapi` package.
+            DeriveInfo {
+                name: "sa_version",
+                kind: TypeKind::Struct,
+                ..
+            } => ["PartialEq", "Eq", "PartialOrd", "Ord", "Hash"]
+                .map(ToOwned::to_owned)
+                .into(),
+            _ => Vec::new(),
         }
     }
 }

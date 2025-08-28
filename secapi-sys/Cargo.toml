@@ -18,12 +18,5 @@ links = "saclient"
 default = []
 system-sa-client = []
 
-# Generate Rust bindings for `tasecureapi` at build-time.
-#
-# `libclang` must be available on the build system. By default, the checked-in
-# bindings will be used which may not be appropriate, especially when linking
-# to the system `saclient` library.
-bindgen = []
-
 [build-dependencies]
 bindgen = "0.72.0"

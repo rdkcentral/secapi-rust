@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Comcast Cable Communications Management, LLC
+ * Copyright 2023-2025 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-//mod manual_bindings;
-
-//#[cfg(feature = "bindgen")]
 mod bindings {
     // Many bindgen-generated items will violate Rust's usual naming style so we choose to
     // ignore warnings regarding bindgen-generated item names.
@@ -55,6 +52,3 @@ impl TryFrom<u8> for sa_key_type {
         }
     }
 }
-
-//#[cfg(not(feature = "bindgen"))]
-//include!("manual_bindings.rs");

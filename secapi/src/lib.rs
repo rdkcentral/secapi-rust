@@ -16,6 +16,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+pub mod crypto;
+pub mod key;
+pub mod svp;
+
 use std::{
     error::Error,
     ffi::{c_char, c_void},
@@ -27,6 +31,8 @@ use bitflags::bitflags;
 use chrono::{DateTime, NaiveDate, Utc};
 use secapi_sys as ffi;
 use uuid::Uuid;
+
+pub use ffi::sa_version as Version;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorStatus {
@@ -248,6 +254,7 @@ bitflags! {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Rights {
     /// Key identifier. Not used internally by SecAPI.
+    // TODO(#2): This should really be a u8
     id: [c_char; 64],
     /// Usage flags bitfield.
     usage_flags: UsageFlags,
@@ -421,36 +428,6 @@ impl From<DigestAlgorithm> for ffi::sa_digest_algorithm {
 trait FfiParameters {
     /// Return the void pointer to the ffi structure the function is expecting
     fn ffi_ptr(&mut self) -> *mut c_void;
-}
-
-pub mod crypto;
-pub mod key;
-pub mod svp;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Version {
-    /// Major version of the SecAPI specification
-    pub specification_major: u64,
-
-    /// Minor version of the SecAPI specification
-    pub specification_minor: u64,
-
-    /// Revision version of the SecAPI specification
-    pub specification_revision: u64,
-
-    /// implementation_revision
-    pub implementation_revision: u64,
-}
-
-impl From<ffi::sa_version> for Version {
-    fn from(value: ffi::sa_version) -> Self {
-        Version {
-            specification_major: value.specification_major,
-            specification_minor: value.specification_minor,
-            specification_revision: value.specification_revision,
-            implementation_revision: value.implementation_revision,
-        }
-    }
 }
 
 /// Obtain the firmware version

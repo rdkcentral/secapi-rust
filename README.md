@@ -86,15 +86,7 @@ This library has a couple of different feature flags that will effect how the li
 
 - `secapi-sys`:
 
-  1.  [`libc`](https://crates.io/crates/libc)
-  2.  [`copy_dir`](https://crates.io/crates/copy_dir): Is required to build but is not a runtime dependency
-
-- `secapi`
-
-  1.  [`libc`](https://crates.io/crates/libc)
-  2.  [`chrono`](https://crates.io/crates/chrono)
-  3.  [`bitflags`](https://crates.io/crates/bitflags)
-  4.  [`uuid`](https://crates.io/crates/uuid)
+  1. `clang`: Required by bindgen to generate Rust bindings for `tasecureapi`
 
 If doing a default build (which has the `system-sa-client` feature disabled) then Cargo will build the default reference library
 `tasecureapi` and dynamically link it to the output of this project. You will then need the following dependencies inorder to build
