@@ -88,7 +88,7 @@ const SACLIENT_API_HEADER: &str = r#"
 #include <sa_types.h>
 
 /*
- * TODO(DTM-4526): These headers re-export openssl headers which currently
+ * TODO(#24): These headers re-export openssl headers which currently
  * cannot always be found e.g. when vendoring the `tasecureapi` reference
  * implementation.
  */
