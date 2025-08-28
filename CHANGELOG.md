@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Use bindgen to automatically generate bindings to `secapi`
+
 ## v0.2.2 (2025-05-13)
 
 - Updated tasecureapi version
