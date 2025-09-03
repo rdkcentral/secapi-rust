@@ -1,5 +1,5 @@
-/**
- * Copyright 2023 Comcast Cable Communications Management, LLC
+/*
+ * Copyright 2023-2025 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-use libc::{c_void, size_t};
+
+use std::ffi::c_void;
+
 use secapi_sys as ffi;
 
 use crate::{convert_result, DigestAlgorithm, ErrorStatus};
@@ -45,7 +47,7 @@ impl SvpMemory {
         let mut memory_ptr: *mut c_void = std::ptr::null_mut();
         let memory_ptr_ptr: *mut *mut c_void = &mut memory_ptr;
 
-        convert_result(unsafe { ffi::sa_svp_memory_alloc(memory_ptr_ptr, size as size_t) })?;
+        convert_result(unsafe { ffi::sa_svp_memory_alloc(memory_ptr_ptr, size) })?;
 
         Ok(Self { memory_ptr, size })
     }
@@ -70,7 +72,7 @@ pub struct SvpOffset {
     pub length: usize,
 }
 
-impl From<SvpOffset> for ffi::SaSvpOffset {
+impl From<SvpOffset> for ffi::sa_svp_offset {
     fn from(value: SvpOffset) -> Self {
         Self {
             out_offset: value.out_offset,
@@ -82,16 +84,14 @@ impl From<SvpOffset> for ffi::SaSvpOffset {
 
 pub struct SvpBuffer<'a> {
     underlying_svp_memory: Option<&'a SvpMemory>,
-    buffer_handle: ffi::SaSvpBuffer,
+    buffer_handle: ffi::sa_svp_buffer,
 }
 
 impl<'a> SvpBuffer<'a> {
     pub fn allocate(size: usize) -> Result<Self, ErrorStatus> {
-        let mut buffer_handle: ffi::SaSvpBuffer = ffi::INVALID_HANDLE;
+        let mut buffer_handle: ffi::sa_svp_buffer = ffi::INVALID_HANDLE;
 
-        convert_result(unsafe {
-            ffi::sa_svp_buffer_alloc(&mut buffer_handle as *mut _, size as size_t)
-        })?;
+        convert_result(unsafe { ffi::sa_svp_buffer_alloc(&mut buffer_handle as *mut _, size) })?;
 
         Ok(Self {
             underlying_svp_memory: None,
@@ -100,14 +100,10 @@ impl<'a> SvpBuffer<'a> {
     }
 
     pub fn with_underlying_memory(memory: &'a SvpMemory) -> Result<Self, ErrorStatus> {
-        let mut buffer_handle: ffi::SaSvpBuffer = ffi::INVALID_HANDLE;
+        let mut buffer_handle: ffi::sa_svp_buffer = ffi::INVALID_HANDLE;
 
         convert_result(unsafe {
-            ffi::sa_svp_buffer_create(
-                &mut buffer_handle as *mut _,
-                memory.memory_ptr,
-                memory.size as size_t,
-            )
+            ffi::sa_svp_buffer_create(&mut buffer_handle as *mut _, memory.memory_ptr, memory.size)
         })?;
 
         Ok(Self {
@@ -124,7 +120,7 @@ impl<'a> SvpBuffer<'a> {
         let mut ffi_offsets = offsets
             .into_iter()
             .map(|offset| offset.into())
-            .collect::<Vec<ffi::SaSvpOffset>>();
+            .collect::<Vec<ffi::sa_svp_offset>>();
 
         convert_result(unsafe {
             ffi::sa_svp_buffer_write(
@@ -132,7 +128,7 @@ impl<'a> SvpBuffer<'a> {
                 bytes_to_write.as_ptr() as *const _,
                 bytes_to_write.len(),
                 ffi_offsets.as_mut_ptr() as *mut _,
-                ffi_offsets.len() as size_t,
+                ffi_offsets.len(),
             )
         })?;
 
@@ -143,14 +139,14 @@ impl<'a> SvpBuffer<'a> {
         let mut ffi_offsets = offsets
             .into_iter()
             .map(|offset| offset.into())
-            .collect::<Vec<ffi::SaSvpOffset>>();
+            .collect::<Vec<ffi::sa_svp_offset>>();
 
         convert_result(unsafe {
             ffi::sa_svp_buffer_copy(
                 self.buffer_handle,
                 source.buffer_handle,
                 ffi_offsets.as_mut_ptr() as *mut _,
-                ffi_offsets.len() as size_t,
+                ffi_offsets.len(),
             )
         })?;
 
@@ -167,11 +163,11 @@ impl<'a> SvpBuffer<'a> {
         let result = convert_result(unsafe {
             ffi::sa_svp_buffer_check(
                 self.buffer_handle,
-                offset as size_t,
-                length as size_t,
+                offset,
+                length,
                 digest_algorithm.into(),
                 hash.as_ptr() as *const _,
-                hash.len() as size_t,
+                hash.len(),
             )
         });
 
@@ -206,10 +202,9 @@ impl Drop for SvpBuffer<'_> {
                 let mut svp_memory_ptr = svp_memory.memory_ptr;
                 let svp_memory_ptr_ptr = &mut svp_memory_ptr as *mut *mut c_void;
                 let mut size = svp_memory.size;
-                let size_ptr = &mut size as *mut size_t;
 
                 let _ = unsafe {
-                    ffi::sa_svp_buffer_release(svp_memory_ptr_ptr, size_ptr, *buffer_handle)
+                    ffi::sa_svp_buffer_release(svp_memory_ptr_ptr, &mut size, *buffer_handle)
                 };
             }
             None => {
@@ -246,8 +241,8 @@ mod test {
 
     #[test]
     fn allocate_buffer_with_underlying_memory() -> Result<(), ErrorStatus> {
-        let mut svp_memory = SvpMemory::allocate(128)?;
-        let _svp_buffer = SvpBuffer::with_underlying_memory(&mut svp_memory)?;
+        let svp_memory = SvpMemory::allocate(128)?;
+        let _svp_buffer = SvpBuffer::with_underlying_memory(&svp_memory)?;
         Ok(())
     }
 

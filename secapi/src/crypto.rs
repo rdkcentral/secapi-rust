@@ -1,5 +1,5 @@
-/**
- * Copyright 2023 Comcast Cable Communications Management, LLC
+/*
+ * Copyright 2023-2025 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-use libc::size_t;
-use secapi_sys as ffi;
+
 use std::{ffi::c_void, ptr::null_mut};
+
+use secapi_sys as ffi;
 
 use crate::{convert_result, key::Key, DigestAlgorithm, ErrorStatus, FfiParameters};
 
@@ -30,20 +31,21 @@ pub enum MacAlgorithm {
     HMac,
 }
 
-impl From<MacAlgorithm> for ffi::SaMacAlgorithm {
+impl From<MacAlgorithm> for ffi::sa_mac_algorithm {
     fn from(value: MacAlgorithm) -> Self {
         match value {
-            MacAlgorithm::CMac => Self::CMAC,
-            MacAlgorithm::HMac => Self::HMAC,
+            MacAlgorithm::CMac => ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_CMAC,
+            MacAlgorithm::HMac => ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_HMAC,
         }
     }
 }
 
-impl From<ffi::SaMacAlgorithm> for MacAlgorithm {
-    fn from(value: ffi::SaMacAlgorithm) -> Self {
+impl From<ffi::sa_mac_algorithm> for MacAlgorithm {
+    fn from(value: ffi::sa_mac_algorithm) -> Self {
         match value {
-            ffi::SaMacAlgorithm::CMAC => Self::CMac,
-            ffi::SaMacAlgorithm::HMAC => Self::HMac,
+            ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_CMAC => Self::CMac,
+            ffi::sa_mac_algorithm::SA_MAC_ALGORITHM_HMAC => Self::HMac,
+            _ => panic!("invalid sa_mac_algorithm: {value:?}"),
         }
     }
 }
@@ -53,11 +55,11 @@ pub enum MacInitParameters {
     HMac { digest_algorithm: DigestAlgorithm },
 }
 
-impl From<&MacInitParameters> for ffi::SaMacAlgorithm {
+impl From<&MacInitParameters> for ffi::sa_mac_algorithm {
     fn from(value: &MacInitParameters) -> Self {
         match value {
-            MacInitParameters::CMac => Self::CMAC,
-            MacInitParameters::HMac { .. } => Self::HMAC,
+            MacInitParameters::CMac => Self::SA_MAC_ALGORITHM_CMAC,
+            MacInitParameters::HMac { .. } => Self::SA_MAC_ALGORITHM_HMAC,
         }
     }
 }
@@ -67,7 +69,7 @@ impl MacInitParameters {
         match self {
             Self::CMac => MacInitFfiParameters::CMac,
             Self::HMac { digest_algorithm } => MacInitFfiParameters::HMac {
-                params: ffi::SaMacParametersHmac {
+                params: ffi::sa_mac_parameters_hmac {
                     digest_algorithm: digest_algorithm.into(),
                 },
             },
@@ -77,7 +79,7 @@ impl MacInitParameters {
 
 enum MacInitFfiParameters {
     CMac,
-    HMac { params: ffi::SaMacParametersHmac },
+    HMac { params: ffi::sa_mac_parameters_hmac },
 }
 
 impl FfiParameters for MacInitFfiParameters {
@@ -90,13 +92,13 @@ impl FfiParameters for MacInitFfiParameters {
 }
 
 pub struct MacContext<'a> {
-    pub(crate) context_handle: ffi::SaCryptoMacContext,
+    pub(crate) context_handle: ffi::sa_crypto_mac_context,
     _key: &'a Key,
 }
 
 impl<'a> MacContext<'a> {
     pub fn init(mac_params: MacInitParameters, key: &'a Key) -> Result<Self, ErrorStatus> {
-        let mut context_handle: ffi::SaCryptoMacContext = ffi::INVALID_HANDLE;
+        let mut context_handle: ffi::sa_crypto_mac_context = ffi::INVALID_HANDLE;
 
         let mac_algorithm = (&mac_params).into();
         let mut ffi_params = mac_params.into_ffi_parameters();
@@ -136,7 +138,7 @@ impl<'a> MacContext<'a> {
     }
 
     pub fn compute(&self) -> Result<Vec<u8>, ErrorStatus> {
-        let mut out_length: size_t = 0;
+        let mut out_length = 0;
 
         // Figure out the size of the MAC
         convert_result(unsafe {

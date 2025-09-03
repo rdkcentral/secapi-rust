@@ -86,15 +86,7 @@ This library has a couple of different feature flags that will effect how the li
 
 - `secapi-sys`:
 
-  1.  [`libc`](https://crates.io/crates/libc)
-  2.  [`copy_dir`](https://crates.io/crates/copy_dir): Is required to build but is not a runtime dependency
-
-- `secapi`
-
-  1.  [`libc`](https://crates.io/crates/libc)
-  2.  [`chrono`](https://crates.io/crates/chrono)
-  3.  [`bitflags`](https://crates.io/crates/bitflags)
-  4.  [`uuid`](https://crates.io/crates/uuid)
+  1. `clang`: Required by bindgen to generate Rust bindings for `tasecureapi`
 
 If doing a default build (which has the `system-sa-client` feature disabled) then Cargo will build the default reference library
 `tasecureapi` and dynamically link it to the output of this project. You will then need the following dependencies inorder to build
@@ -243,18 +235,19 @@ assert_eq!(header.size, 128);
 
 ### sa_key.h
 
-| Function            | Implemented | Unit Tested | Rust Counterpart                                   |
-| ------------------- | ----------- | ----------- | -------------------------------------------------- |
-| `sa_key_generate`   | ✅          | ✅          | `key::Key::generate`                               |
-| `sa_key_export`     | ✅          | ❌          | `key::Key::export`                                 |
-| `sa_key_import`     | ✅          | ✅          | `key::Key::import`                                 |
-| `sa_key_unwrap`     | ✅          | ❌          | `key::Key::unwrap`                                 |
-| `sa_key_get_public` | ✅          | ✅          | `key::Key::public_component`                       |
-| `sa_key_derive`     | ✅          | ❌          | `key::Key::derive`                                 |
-| `sa_key_exchange`   | ❌          | ❌          | N/A                                                |
-| `sa_key_release`    | ✅          | ✅          | Handle automatically as a part of `key::Key::Drop` |
-| `sa_key_header`     | ✅          | ✅          | `key::Key::header`                                 |
-| `sa_key_digest`     | ✅          | ✅          | `key::Key::digest`                                 |
+| Function              | Implemented | Unit Tested | Rust Counterpart                                   |
+| --------------------- | ----------- | ----------- | -------------------------------------------------- |
+| `sa_key_generate`     | ✅          | ✅          | `key::Key::generate`                               |
+| `sa_key_export`       | ✅          | ❌          | `key::Key::export`                                 |
+| `sa_key_provision_ta` | ❌          | ❌          | N/A                                                |
+| `sa_key_import`       | ✅          | ✅          | `key::Key::import`                                 |
+| `sa_key_unwrap`       | ✅          | ❌          | `key::Key::unwrap`                                 |
+| `sa_key_get_public`   | ✅          | ✅          | `key::Key::public_component`                       |
+| `sa_key_derive`       | ✅          | ❌          | `key::Key::derive`                                 |
+| `sa_key_exchange`     | ❌          | ❌          | N/A                                                |
+| `sa_key_release`      | ✅          | ✅          | Handle automatically as a part of `key::Key::Drop` |
+| `sa_key_header`       | ✅          | ✅          | `key::Key::header`                                 |
+| `sa_key_digest`       | ✅          | ✅          | `key::Key::digest`                                 |
 
 ### sa_svp.h
 
@@ -271,3 +264,22 @@ assert_eq!(header.size, 128);
 | `sa_svp_buffer_copy`    | ✅          | ✅     | `svp::SvpBuffer::copy`                                   |
 | `sa_svp_key_check`      | ❌          | ❌     | N/A                                                      |
 | `sa_svp_buffer_check`   | ✅          | ❌     | `svp::SvpBuffer::check`                                  |
+
+### sa_cenc.h
+
+| Function                            | Implemented | Tested | Rust Counterpart   |
+| ----------------------------------- | ----------- | ------ | ------------------ |
+| `sa_process_common_encryption`      | ❌          | ❌     | N/A                |
+
+### sa_provider.h
+
+| Function              | Implemented | Tested | Rust Counterpart   |
+| --------------------- | ----------- | ------ | ------------------ |
+| `sa_get_provider`     | ❌          | ❌     | N/A                |
+
+### sa_engine.h
+
+| Function              | Implemented | Tested | Rust Counterpart   |
+| --------------------- | ----------- | ------ | ------------------ |
+| `sa_get_engine`       | ❌          | ❌     | N/A                |
+| `sa_engine_free`      | ❌          | ❌     | N/A                |
