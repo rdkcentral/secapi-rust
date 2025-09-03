@@ -1,7 +1,5 @@
-use std::ffi::c_void;
-
-/**
- * Copyright 2023 Comcast Cable Communications Management, LLC
+/*
+ * Copyright 2023-2025 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +15,9 @@ use std::ffi::c_void;
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+use std::ffi::c_void;
+
 use secapi_sys as ffi;
 
 use crate::{convert_result, DigestAlgorithm, ErrorStatus};

@@ -1,5 +1,5 @@
-/**
- * Copyright 2023 Comcast Cable Communications Management, LLC
+/*
+ * Copyright 2023-2025 Comcast Cable Communications Management, LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-use secapi_sys as ffi;
+
 use std::{ffi::c_void, ptr::null_mut};
+
+use secapi_sys as ffi;
 
 use crate::{convert_result, key::Key, DigestAlgorithm, ErrorStatus, FfiParameters};
 
