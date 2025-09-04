@@ -19,7 +19,7 @@ doctest = false
 system-sa-client = ["secapi-sys/system-sa-client"]
 
 [dependencies]
-secapi-sys = { path = "../secapi-sys", version = "0.2.2" }
+secapi-sys = { path = "../secapi-sys", version = "0.3.0" }
 chrono = "0.4.30"
 bitflags = "2.4.0"
 uuid = "1.4.1"

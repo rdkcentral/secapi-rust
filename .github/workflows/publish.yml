@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install external dependencies
-        run: sudo apt-get update -y && sudo apt-get -y install libyajl-dev libssl-dev
+        run: sudo apt-get update -y && sudo apt-get -y install libyajl-dev libssl-dev clang
       - name: Checkout
         uses: actions/checkout@v4
         with:
