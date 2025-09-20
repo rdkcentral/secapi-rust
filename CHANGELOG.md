@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove the `authors` field from all `Cargo.toml` files
+
 ## v0.3.0 (2025-09-04)
 
 - Use bindgen to automatically generate bindings to `secapi` #22
