@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Use `bindgen` to automatically generate bindings to `tasecureapi` (#22)
+- Use `bindgen` to automatically generate bindings to `tasecureapi`
+  ([#22](https://github.com/rdkcentral/secapi-rust/issues/22))
 
 ## [v0.2.2][] - 2025-05-13
 
