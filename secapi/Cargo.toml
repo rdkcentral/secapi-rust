@@ -1,9 +1,6 @@
 [package]
 name = "secapi"
 version.workspace = true
-authors = [
-    "Stefan Bossbaly <Stefan_Bossbaly@comcast.com>",
-]
 description = "SecAPI bindings"
 keywords = ["crypto", "secure", "secapi"]
 categories = ["cryptography", "api-bindings"]

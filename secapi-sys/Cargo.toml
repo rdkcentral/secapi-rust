@@ -1,9 +1,6 @@
 [package]
 name = "secapi-sys"
 version.workspace = true
-authors = [
-    "Stefan Bossbaly <Stefan_Bossbaly@comcast.com>",
-]
 description = "FFI bindings to SecAPI"
 keywords = ["secure", "storage", "secapi"]
 categories = ["cryptography", "external-ffi-bindings"]
