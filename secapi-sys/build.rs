@@ -25,9 +25,12 @@ fn main() {
 
     let include_dir = if cfg!(feature = "system-sa-client") {
         println!("cargo::rustc-link-lib=dylib=saclient");
+
+        // There are no special include directories to search when using system-installed
+        // `libsaclient.so`
         None
     } else {
-        let include_dir = vendor_tasecureapi(&out_dir);
+        let include_dir = vendor_saclient(&out_dir);
         println!("cargo::metadata=INCLUDE={}", include_dir.to_str().unwrap());
         Some(include_dir)
     };
@@ -50,13 +53,36 @@ fn main() {
         .unwrap();
 }
 
-fn vendor_tasecureapi(out_dir: &Path) -> PathBuf {
+/// Builds `tasecureapi` from source as a static library.
+///
+/// The version of `tasecureapi` being vendored is the `secapi` reference implementation and may
+/// not be suitable for all applications. This should be good enough for unit testing purposes,
+/// however.
+///
+/// Cargo instructions required to find and link to `libsaclient.a` are printed.
+///
+/// The returned value is the path to an include directory containing public headers for
+/// `libsaclient.a`.
+fn vendor_saclient(out_dir: &Path) -> PathBuf {
+    // The `secapi` reference implementation depends on YAJL and OpenSSL. YAJL is a small library
+    // that isn't commonly installed, so we choose to always vendor it and link to it statically.
+    let yajl_include_dir = vendor_yajl(out_dir);
+
+    // OpenSSL on the other hand, is widely available, and fairly large and slow to build so we
+    // choose to dynamically link to a system-installed copy.
+    println!("cargo::rustc-link-lib=dylib=crypto");
+    let openssl_include_dir = PathBuf::from(
+        std::env::var_os("DEP_OPENSSL_INCLUDE")
+            .expect("DEP_OPENSSL_INCLUDE should be set by the openssl-sys build script"),
+    );
+
     let src = path!("tasecureapi" / "reference" / "src");
     let client = path!(src / "client" / "src");
     let clientimpl = path!(src / "clientimpl" / "src");
     let taimpl = path!(src / "taimpl" / "src");
     let util = path!(src / "util" / "src");
-    let include_dir = path!(out_dir / "include");
+    let build_dir = path!(out_dir / "tasecureapi-build");
+    let include_dir = path!(build_dir / "include");
 
     let public_api_headers = [
         "sa_cenc.h",
@@ -78,10 +104,13 @@ fn vendor_tasecureapi(out_dir: &Path) -> PathBuf {
     }
 
     cc::Build::new()
-        .out_dir(path!(out_dir / "build"))
+        .out_dir(build_dir)
         .warnings(false)
         .std("gnu11")
         .define("_GNU_SOURCE", None)
+        .include(&openssl_include_dir)
+        .include(&yajl_include_dir)
+        .include(path!("tasecureapi" / "reference" / "include"))
         .include(&client)
         .include(path!(src / "include"))
         .include(path!(src / "client" / "include"))
@@ -227,9 +256,45 @@ fn vendor_tasecureapi(out_dir: &Path) -> PathBuf {
         .file(path!(util / "sa_rights.c"))
         .compile("saclient");
 
-    // TODO: Perhaps give the user the option to vendor these as well?
-    println!("cargo::rustc-link-lib=dylib=crypto");
-    println!("cargo::rustc-link-lib=dylib=yajl");
+    include_dir
+}
+
+/// Builds YAJL from source as a static library.
+///
+/// Cargo instructions required to find and link to `libyajl.a` are printed.
+///
+/// The returned value is the path to an include directory containing public headers for
+/// `libyajl.a`.
+fn vendor_yajl(out_dir: &Path) -> PathBuf {
+    let yajl_build = path!(out_dir / "yajl-build");
+    let include_dir = path!(yajl_build / "include");
+
+    std::fs::create_dir_all(path!(include_dir / "yajl")).unwrap();
+    for header in path!("yajl" / "api").read_dir().unwrap() {
+        let header = header.unwrap();
+        std::fs::copy(
+            header.path(),
+            path!(include_dir / "yajl" / header.file_name()),
+        )
+        .unwrap();
+    }
+
+    cc::Build::new()
+        .out_dir(yajl_build)
+        .std("c99")
+        .warnings(false)
+        .include(&include_dir)
+        .include("yajl")
+        .file(path!("yajl" / "yajl_alloc.c"))
+        .file(path!("yajl" / "yajl_buf.c"))
+        .file(path!("yajl" / "yajl_encode.c"))
+        .file(path!("yajl" / "yajl_gen.c"))
+        .file(path!("yajl" / "yajl_lex.c"))
+        .file(path!("yajl" / "yajl_parser.c"))
+        .file(path!("yajl" / "yajl_tree.c"))
+        .file(path!("yajl" / "yajl_version.c"))
+        .file(path!("yajl" / "yajl.c"))
+        .compile("yajl");
 
     include_dir
 }
@@ -244,9 +309,9 @@ const SACLIENT_API_HEADER: &str = r#"
 #include <sa_types.h>
 
 /*
- * TODO(#24): These headers re-export openssl headers which currently
- * cannot always be found e.g. when vendoring the `tasecureapi` reference
- * implementation.
+ * TODO(#25): These headers re-export some OpenSSL definitions. If we try to generate bindings for
+ * these functions with bindgen, we will end up generating bindings for a large portion of OpenSSL
+ * which is not desirable.
  */
 //#include <sa_engine.h>
 //#include <sa_provider.h>

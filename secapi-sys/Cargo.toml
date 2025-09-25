@@ -19,3 +19,6 @@ system-sa-client = []
 bindgen = "0.72.0"
 cc = { version = "1.2.38", features = ["parallel"] }
 path_macro = "1.0.0"
+
+[dependencies]
+openssl-sys = "0.9.109"
