@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased][]
 
 - Remove the `authors` field from all `Cargo.toml` files
+- Vendor YAJL so it no longer needs to be installed
+- Remove the external dependency on CMake and use `cc` to build `tasecureapi`
+  instead
 
 ## [v0.3.0][] - 2025-09-04
 
