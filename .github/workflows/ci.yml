@@ -7,20 +7,20 @@ on:
   pull_request:
 
 jobs:
-  build_and_test_x64:
-    name: Build and Test on x64 ${{ matrix.rust }}
-    runs-on: ubuntu-22.04
+  build_and_test:
+    name: Build and Test on ${{ matrix.runner }} with Rust ${{ matrix.rust }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
         rust:
+          - 1.82.0
           - stable
           - beta
 
     steps:
-      - name: Install YAJL
-        run: sudo apt-get install -y libyajl-dev
-        continue-on-error: true
-
       - name: Install OpenSSL
         run: sudo apt-get install -y libssl-dev
 
@@ -32,59 +32,24 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt, clippy
-
-      - name: Display Toolchain Information
+      - name: Install Toolchain
         run: |
-          cargo --version --verbose
-          rustc --version
-          cargo clippy --version
+          rustup toolchain install \
+            --no-self-update \
+            --profile default \
+            ${{ matrix.rust }}
+          rustup default ${{ matrix.rust }}
 
-      - name: Lint
-        run: |
-          cargo fmt -- --check
-          cargo clippy -- -D warnings
+      - name: Check Style
+        run: cargo fmt -- --check
+
+      - name: Run clippy
+        run: cargo clippy -- -D warnings
 
       - name: Test
         run: |
-          cargo check
           ROOT_KEYSTORE="${GITHUB_WORKSPACE}/root_keystore.p12" cargo test --all
 
       - name: Build
         run: |
           cargo build --release
-
-  build_and_test_aarch64:
-    name: Build on aarch64 ${{ matrix.rust }}
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install YAJL
-        run: sudo apt-get install -y libyajl-dev
-
-      - name: Install toolchain
-        run: |
-          rustup toolchain install \
-            -t aarch64-unknown-linux-gnu \
-            --no-self-update \
-            ${{ matrix.rust }}
-          rustup default ${{ matrix.rust }}
-
-      - name: Build
-        run: |
-          cargo build --target aarch64-unknown-linux-gnu --release
-
