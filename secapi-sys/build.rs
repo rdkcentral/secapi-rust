@@ -239,6 +239,7 @@ fn vendor_saclient(out_dir: &Path) -> PathBuf {
         .file(path!(taimpl / "ta_sa_key_get_public.c"))
         .file(path!(taimpl / "ta_sa_key_header.c"))
         .file(path!(taimpl / "ta_sa_key_import.c"))
+        .file(path!(taimpl / "ta_sa_key_provision.c"))
         .file(path!(taimpl / "ta_sa_key_release.c"))
         .file(path!(taimpl / "ta_sa_key_unwrap.c"))
         .file(path!(taimpl / "ta_sa_process_common_encryption.c"))
@@ -253,6 +254,7 @@ fn vendor_saclient(out_dir: &Path) -> PathBuf {
         .file(path!(util / "log.c"))
         .file(path!(util / "pkcs8.c"))
         .file(path!(util / "pkcs12.c"))
+        .file(path!(util / "root_keystore.c"))
         .file(path!(util / "sa_rights.c"))
         .compile("saclient");
 
