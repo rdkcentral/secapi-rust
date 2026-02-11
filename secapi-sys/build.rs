@@ -40,6 +40,7 @@ fn main() {
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .parse_callbacks(Box::new(CustomCallback))
         .generate_comments(false)
+        .clang_args(["-D", "ENABLE_SVP"])
         .header_contents("saclient-api.h", SACLIENT_API_HEADER);
 
     if let Some(include_dir) = include_dir {
@@ -108,6 +109,7 @@ fn vendor_saclient(out_dir: &Path) -> PathBuf {
         .warnings(false)
         .std("gnu11")
         .define("_GNU_SOURCE", None)
+        .define("ENABLE_SVP", None)
         .include(&openssl_include_dir)
         .include(&yajl_include_dir)
         .include(path!("tasecureapi" / "reference" / "include"))
