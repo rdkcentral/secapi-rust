@@ -103,6 +103,7 @@ fn vendor_saclient(out_dir: &Path) -> PathBuf {
         )
         .unwrap();
     }
+    println!("cargo::rerun-if-changed=tasecureapi/");
 
     cc::Build::new()
         .out_dir(build_dir)
@@ -282,6 +283,7 @@ fn vendor_yajl(out_dir: &Path) -> PathBuf {
         )
         .unwrap();
     }
+    println!("cargo::rerun-if-changed=yajl/");
 
     cc::Build::new()
         .out_dir(yajl_build)
