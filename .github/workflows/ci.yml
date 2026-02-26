@@ -48,7 +48,7 @@ jobs:
 
       - name: Test
         run: |
-          ROOT_KEYSTORE="${GITHUB_WORKSPACE}/root_keystore.p12" cargo test --all
+          cargo test --all
 
       - name: Build
         run: |
