@@ -566,7 +566,7 @@ mod test {
 
         assert_eq!(secapi_version.specification_major, 3);
         assert_eq!(secapi_version.specification_minor, 4);
-        assert_eq!(secapi_version.specification_revision, 0);
+        assert_eq!(secapi_version.specification_revision, 1);
         assert_eq!(secapi_version.implementation_revision, 0);
 
         Ok(())

@@ -7,20 +7,20 @@ on:
   pull_request:
 
 jobs:
-  build_and_test_x64:
-    name: Build and Test on x64 ${{ matrix.rust }}
-    runs-on: ubuntu-22.04
+  build_and_test:
+    name: Build and Test on ${{ matrix.runner }} with Rust ${{ matrix.rust }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
         rust:
+          - 1.82.0
           - stable
           - beta
 
     steps:
-      - name: Install YAJL
-        run: sudo apt-get install -y libyajl-dev
-        continue-on-error: true
-
       - name: Install OpenSSL
         run: sudo apt-get install -y libssl-dev
 
@@ -32,73 +32,24 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt, clippy
-
-      - name: Display Toolchain Information
+      - name: Install Toolchain
         run: |
-          cargo --version --verbose
-          rustc --version
-          cargo clippy --version
+          rustup toolchain install \
+            --no-self-update \
+            --profile default \
+            ${{ matrix.rust }}
+          rustup default ${{ matrix.rust }}
 
-      - name: Lint
-        run: |
-          cargo fmt -- --check
-          cargo clippy -- -D warnings
+      - name: Check Style
+        run: cargo fmt -- --check
+
+      - name: Run clippy
+        run: cargo clippy -- -D warnings
 
       - name: Test
         run: |
-          cargo check
-          ROOT_KEYSTORE="${GITHUB_WORKSPACE}/root_keystore.p12" cargo test --all
+          cargo test --all
 
       - name: Build
         run: |
           cargo build --release
-
-  build_and_test_aarch64:
-    name: Build and Test on aarch64 ${{ matrix.rust }}
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Build and Test
-        uses: uraimo/run-on-arch-action@v3
-        id: build_and_test
-        with:
-          arch: aarch64
-          distro: ubuntu22.04
-          githubToken: ${{ github.token }}
-          install: |
-            apt-get update -q -y
-            apt-get install -q -y --no-install-recommends \
-              ca-certificates \
-              git \
-              build-essential \
-              cmake \
-              curl \
-              libyajl-dev \
-              libssl-dev \
-              clang
-            curl --proto '=https' -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${{ matrix.rust }} --component "rustfmt, clippy"
-          run: |
-            source "$HOME/.cargo/env"
-            cargo --version --verbose
-            rustc --version
-            cargo clippy --version
-            cargo fmt -- --check
-            cargo clippy -- -D warnings
-            cargo check
-            ROOT_KEYSTORE="${GITHUB_WORKSPACE}/root_keystore.p12" cargo test --all
-            cargo build --release

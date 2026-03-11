@@ -28,3 +28,7 @@ copy_dir (MIT License), https://github.com/mdunsmuir/copy_dir
 chrono (Apache License, Version 2.0), https://github.com/chronotope/chrono
 bitflags (Apache License, Version 2.0), https://github.com/bitflags/bitflags
 uuid (Apache License, Version 2.0), https://github.com/uuid-rs/uuid
+
+yajl is:
+Copyright (c) 2007-2014, Lloyd Hilaiel <me@lloyd.io> et al.
+Licensed under the ISC License
