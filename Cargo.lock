@@ -365,7 +365,7 @@ checksum = "eded382c5f5f786b989652c49544c4877d9f015cc22e145a5ea8ea66c2921cd2"
 
 [[package]]
 name = "secapi"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bitflags",
  "chrono",
@@ -375,7 +375,7 @@ dependencies = [
 
 [[package]]
 name = "secapi-sys"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bindgen",
  "cc",

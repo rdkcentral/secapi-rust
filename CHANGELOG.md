@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
+## [v0.4.0][] - 2026-07-29
+
 - Remove the `authors` field from all `Cargo.toml` files
 - Vendor YAJL so it no longer needs to be installed
 - Remove the external dependency on CMake and use `cc` to build `tasecureapi`
@@ -64,7 +66,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set `rustfmt` column width to 100
 - GitHub workflows for CI and publishing
 
-[unreleased]: https://github.com/rdkcentral/secapi-rust/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/rdkcentral/secapi-rust/compare/v0.4.0...HEAD
+[v0.4.0]: https://github.com/rdkcentral/secapi-rust/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/rdkcentral/secapi-rust/compare/v0.2.2...v0.3.0
 [v0.2.2]: https://github.com/rdkcentral/secapi-rust/compare/v0.2.0...v0.2.2
 [v0.2.0]: https://github.com/rdkcentral/secapi-rust/compare/v0.1.0...v0.2.0
